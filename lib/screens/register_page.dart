@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:projectsemester4/services/api_service.dart';
+import '../otp/otp_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -31,7 +32,7 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       isLoading = true;
     });
-    
+
     try {
       final data = await ApiService.register(
         nimController.text.trim(),
@@ -42,26 +43,26 @@ class _RegisterPageState extends State<RegisterPage> {
       if (data['status'] == true) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(data['message'])));
+        ).showSnackBar(const SnackBar(content: Text("OTP dikirim ke email")));
+
+        // SIMPAN EMAIL SEBELUM CLEAR
+        final email = emailController.text.trim();
 
         nimController.clear();
         emailController.clear();
         passwordController.clear();
 
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(
+        // PINDAH KE OTP PAGE
+        Navigator.pushReplacement(
           context,
-        ).showSnackBar(SnackBar(content: Text(data['message'])));
+          MaterialPageRoute(builder: (_) => OtpPage(email: email)),
+        );
+      } else {
+        // Snackbar gagal register
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message']), backgroundColor: Colors.red),
+        );
       }
-    } on TimeoutException {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Server terlalu lama merespon")),
-      );
-    } on SocketException {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tidak bisa terhubung ke server")),
-      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -188,7 +189,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         height: 45,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(255, 51, 106, 224),
+                            backgroundColor: const Color.fromARGB(
+                              255,
+                              51,
+                              106,
+                              224,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),

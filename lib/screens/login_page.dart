@@ -8,6 +8,7 @@ import 'register_page.dart';
 import 'dart:async'; // untuk TimeoutException
 import 'dart:io'; // untuk SocketException
 import '../main.dart'; // untuk MainPage
+import '../otp/otp_page.dart'; // untuk OtpPage
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -22,82 +23,73 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
 
   Future<void> login() async {
-  // VALIDASI DULU
-  if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Email dan password tidak boleh kosong"),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  setState(() {
-    isLoading = true;
-  });
-
-  try {
-    final response = await ApiService.login(
-      emailController.text,
-      passwordController.text,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Login berhasil"),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    // TODO: pindah halaman (kalau ada)
-    // Navigator.pushReplacement(...);
-
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(e.toString()),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } finally {
-    setState(() {
-      isLoading = false;
-    });
-  }
-
-
-  try {
-    final data = await ApiService.login(
-      emailController.text.trim(),
-      passwordController.text.trim(),
-    );
-
-    if (data['status'] == true) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-
-      prefs.setString('name', data['user']['name']);
-      prefs.setInt('user_id', data['user']['id']);
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => MainPage()),
-      );
-    } else {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'])),
+        const SnackBar(
+          content: Text("Email dan password tidak boleh kosong"),
+          backgroundColor: Colors.red,
+        ),
       );
+      return;
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Error: $e")),
-    );
-  }
 
-  setState(() {
-    isLoading = false;
-  });
-}
+    setState(() => isLoading = true);
+
+    try {
+      final data = await ApiService.login(
+        emailController.text.trim(),
+        passwordController.text.trim(),
+      );
+
+      if (data['status'] == true) {
+        // SIMPAN SESSION
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString('name', data['user']['name']);
+        prefs.setInt('user_id', data['user']['user_id']);
+
+        // PINDAH KE HOME
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => MainPage()),
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Login berhasil"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // HANDLE OTP BELUM VERIFIKASI
+        if (data['message'] == "Akun belum verifikasi OTP") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OtpPage(email: emailController.text.trim()),
+            ),
+          );
+        }
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(data['message'])));
+      }
+    } on TimeoutException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Server terlalu lama merespon")),
+      );
+    } on SocketException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Tidak bisa terhubung ke server")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
+
+    setState(() => isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +170,12 @@ class _LoginPageState extends State<LoginPage> {
                       height: 45,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 51, 106, 224),
+                          backgroundColor: const Color.fromARGB(
+                            255,
+                            51,
+                            106,
+                            224,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -188,12 +185,13 @@ class _LoginPageState extends State<LoginPage> {
 
                         child: isLoading
                             ? CircularProgressIndicator(color: Colors.white)
-                            : Text("Login", style:
-                             TextStyle
-                             (fontSize: 16,
-                              color: Colors.white,
-                             )
-                            ),
+                            : Text(
+                                "Login",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
 
