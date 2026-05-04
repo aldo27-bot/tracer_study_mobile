@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // static String baseUrl = "http://172.16.106.213:8000/api";
-  static String baseUrl = "http://172.16.106.191:8000/api";
+  static String baseUrl = "http://192.168.1.8:8000/api";
 
   // CEK ALUMNI
   static Future cekAlumni(String nim) async {
@@ -28,67 +28,72 @@ class ApiService {
 
   // REGISTER
   static Future register(String nim, String email, String password) async {
-  try {
+    try {
+      final response = await http
+          .post(
+            Uri.parse("$baseUrl/register"),
+            headers: {"Accept": "application/json"},
+            body: {"nim": nim, "email": email, "password": password},
+          )
+          .timeout(Duration(seconds: 10));
+
+      print("REGISTER STATUS: ${response.statusCode}");
+      print("REGISTER BODY: ${response.body}");
+
+      final data = jsonDecode(response.body);
+
+      return data;
+    } catch (e) {
+      print("ERROR REGISTER: $e");
+      throw Exception("Koneksi gagal");
+    }
+  }
+
+  // VERIFY OTP
+
+  static Future<Map<String, dynamic>> verifyOtp(
+    String email,
+    String otp,
+  ) async {
     final response = await http
         .post(
-          Uri.parse("$baseUrl/register"),
-          headers: {
-            "Accept": "application/json",
-          },
-          body: {
-            "nim": nim,
-            "email": email,
-            "password": password,
-          },
+          Uri.parse('$baseUrl/verify-otp'),
+          body: {'email': email, 'otp': otp},
         )
-        .timeout(Duration(seconds: 10));
+        .timeout(const Duration(seconds: 10));
 
-    print("REGISTER STATUS: ${response.statusCode}");
-    print("REGISTER BODY: ${response.body}");
-
-    final data = jsonDecode(response.body);
-
-    return data;
-  } catch (e) {
-    print("ERROR REGISTER: $e");
-    throw Exception("Koneksi gagal");
+    return jsonDecode(response.body);
   }
-}
 
   // LOGIN
   static Future login(String email, String password) async {
-  try {
-    var url = Uri.parse("$baseUrl/login");
+    try {
+      var url = Uri.parse("$baseUrl/login");
 
-    var response = await http
-        .post(
-          url,
-          headers: {"Accept": "application/json"},
-          body: {
-            "email": email,
-            "password": password,
-          },
-        )
-        .timeout(Duration(seconds: 10));
+      var response = await http
+          .post(
+            url,
+            headers: {"Accept": "application/json"},
+            body: {"email": email, "password": password},
+          )
+          .timeout(Duration(seconds: 10));
 
-    print("LOGIN STATUS: ${response.statusCode}");
-    print("LOGIN BODY: ${response.body}");
+      print("LOGIN STATUS: ${response.statusCode}");
+      print("LOGIN BODY: ${response.body}");
 
-    final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body);
 
-    return data;
-  } catch (e) {
-    print("ERROR LOGIN: $e");
-    throw Exception("Koneksi gagal");
+      return data;
+    } catch (e) {
+      print("ERROR LOGIN: $e");
+      throw Exception("Koneksi gagal");
+    }
   }
-}
-
 
   //helper untuk ambil data alumni dari response cek-alumni
   static Map<String, dynamic>? getAlumni(Map<String, dynamic> data) {
-  return data['alumni'];
-}
-
+    return data['alumni'];
+  }
 
   // GET QUESTIONS
   static Future<Map<String, dynamic>> getQuestions(int userId) async {
@@ -119,7 +124,9 @@ class ApiService {
 
   // SUBMIT JAWABAN
   static Future<Map<String, dynamic>> submitAnswers(
-      int userId, List answers) async {
+    int userId,
+    List answers,
+  ) async {
     try {
       final url = Uri.parse("$baseUrl/answers");
 
@@ -130,10 +137,7 @@ class ApiService {
               "Accept": "application/json",
               "Content-Type": "application/json",
             },
-            body: jsonEncode({
-              "user_id": userId,
-              "answers": answers,
-            }),
+            body: jsonEncode({"user_id": userId, "answers": answers}),
           )
           .timeout(Duration(seconds: 10));
 
