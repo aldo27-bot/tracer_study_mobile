@@ -28,7 +28,7 @@ class ApiService {
     } else {
       return {
         "status": false,
-        "message": data['message'] ?? "Terjadi kesalahan"
+        "message": data['message'] ?? "Terjadi kesalahan",
       };
     }
   }
@@ -40,8 +40,7 @@ class ApiService {
     try {
       final url = Uri.parse("$baseUrl/cek-alumni?nim=$nim");
 
-      final response =
-          await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       return _handleResponse(response);
     } on TimeoutException {
@@ -57,7 +56,10 @@ class ApiService {
   // REGISTER
   // ==============================
   static Future<Map<String, dynamic>> register(
-      String nim, String email, String password) async {
+    String nim,
+    String email,
+    String password,
+  ) async {
     try {
       final response = await http
           .post(
@@ -81,7 +83,9 @@ class ApiService {
   // VERIFY OTP
   // ==============================
   static Future<Map<String, dynamic>> verifyOtp(
-      String email, String otp) async {
+    String email,
+    String otp,
+  ) async {
     try {
       final response = await http
           .post(
@@ -105,7 +109,9 @@ class ApiService {
   // LOGIN
   // ==============================
   static Future<Map<String, dynamic>> login(
-      String email, String password) async {
+    String email,
+    String password,
+  ) async {
     try {
       final response = await http
           .post(
@@ -150,7 +156,9 @@ class ApiService {
   // SUBMIT ANSWERS
   // ==============================
   static Future<Map<String, dynamic>> submitAnswers(
-      int userId, List answers) async {
+    int userId,
+    List answers,
+  ) async {
     try {
       final url = Uri.parse("$baseUrl/answers");
 
@@ -161,10 +169,36 @@ class ApiService {
               "Accept": "application/json",
               "Content-Type": "application/json",
             },
-            body: jsonEncode({
-              "user_id": userId,
-              "answers": answers,
-            }),
+            body: jsonEncode({"user_id": userId, "answers": answers}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw Exception("Server lama merespon");
+    } on SocketException {
+      throw Exception("Tidak ada koneksi internet");
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
+  // ==============================
+  // UPDATE ALAMAT
+  // ==============================
+  static Future<Map<String, dynamic>> updateAlamat(
+    String nim,
+    String alamat,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse("$baseUrl/update-alamat"),
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+            },
+            body: jsonEncode({"nim": nim, "alamat": alamat}),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -190,21 +224,18 @@ class ApiService {
   // ==============================
 
   static Future<Map<String, dynamic>> resendOtp(String email) async {
-  try {
-    final response = await http
-        .post(
-          Uri.parse("$baseUrl/resend-otp"),
-          headers: {"Accept": "application/json"},
-          body: {"email": email},
-        )
-        .timeout(const Duration(seconds: 10));
+    try {
+      final response = await http
+          .post(
+            Uri.parse("$baseUrl/resend-otp"),
+            headers: {"Accept": "application/json"},
+            body: {"email": email},
+          )
+          .timeout(const Duration(seconds: 10));
 
-    return _handleResponse(response);
-  } catch (e) {
-    throw Exception("Error resend OTP: $e");
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception("Error resend OTP: $e");
+    }
   }
-}
-
-
-
 }
