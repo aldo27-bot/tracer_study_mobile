@@ -1,33 +1,63 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // static String baseUrl = "http://172.16.106.213:8000/api";
   static String baseUrl = "http://192.168.1.8:8000/api";
 
-  // CEK ALUMNI
-  static Future cekAlumni(String nim) async {
-    try {
-      var url = Uri.parse("$baseUrl/cek-alumni?nim=$nim");
-
-      var response = await http.get(url).timeout(Duration(seconds: 10));
-
-      print("CEK ALUMNI STATUS: ${response.statusCode}");
-      print("CEK ALUMNI BODY: ${response.body}");
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception("Gagal cek alumni");
-      }
-    } catch (e) {
-      print("ERROR CEK ALUMNI: $e");
-      throw Exception("Koneksi gagal");
+  // ==============================
+  // HELPER
+  // ==============================
+  static void _checkHtmlResponse(String body) {
+    if (body.startsWith("<")) {
+      throw Exception("Server error (HTML response)");
     }
   }
 
+  static Map<String, dynamic> _handleResponse(http.Response response) {
+    print("STATUS: ${response.statusCode}");
+    print("BODY: ${response.body}");
+
+    _checkHtmlResponse(response.body);
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return data;
+    } else {
+      return {
+        "status": false,
+        "message": data['message'] ?? "Terjadi kesalahan"
+      };
+    }
+  }
+
+  // ==============================
+  // CEK ALUMNI
+  // ==============================
+  static Future<Map<String, dynamic>> cekAlumni(String nim) async {
+    try {
+      final url = Uri.parse("$baseUrl/cek-alumni?nim=$nim");
+
+      final response =
+          await http.get(url).timeout(const Duration(seconds: 10));
+
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw Exception("Server lama merespon");
+    } on SocketException {
+      throw Exception("Tidak ada koneksi internet");
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
+  // ==============================
   // REGISTER
-  static Future register(String nim, String email, String password) async {
+  // ==============================
+  static Future<Map<String, dynamic>> register(
+      String nim, String email, String password) async {
     try {
       final response = await http
           .post(
@@ -35,98 +65,92 @@ class ApiService {
             headers: {"Accept": "application/json"},
             body: {"nim": nim, "email": email, "password": password},
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(const Duration(seconds: 10));
 
-      print("REGISTER STATUS: ${response.statusCode}");
-      print("REGISTER BODY: ${response.body}");
-
-      final data = jsonDecode(response.body);
-
-      return data;
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw Exception("Server terlalu lama merespon");
+    } on SocketException {
+      throw Exception("Tidak ada koneksi internet");
     } catch (e) {
-      print("ERROR REGISTER: $e");
-      throw Exception("Koneksi gagal");
+      throw Exception("Error: $e");
     }
   }
 
+  // ==============================
   // VERIFY OTP
-
+  // ==============================
   static Future<Map<String, dynamic>> verifyOtp(
-    String email,
-    String otp,
-  ) async {
-    final response = await http
-        .post(
-          Uri.parse('$baseUrl/verify-otp'),
-          body: {'email': email, 'otp': otp},
-        )
-        .timeout(const Duration(seconds: 10));
+      String email, String otp) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse("$baseUrl/verify-otp"),
+            headers: {"Accept": "application/json"},
+            body: {'email': email, 'otp': otp},
+          )
+          .timeout(const Duration(seconds: 10));
 
-    return jsonDecode(response.body);
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw Exception("OTP timeout (server lama)");
+    } on SocketException {
+      throw Exception("Tidak ada koneksi internet");
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
   }
 
+  // ==============================
   // LOGIN
-  static Future login(String email, String password) async {
+  // ==============================
+  static Future<Map<String, dynamic>> login(
+      String email, String password) async {
     try {
-      var url = Uri.parse("$baseUrl/login");
-
-      var response = await http
+      final response = await http
           .post(
-            url,
+            Uri.parse("$baseUrl/login"),
             headers: {"Accept": "application/json"},
             body: {"email": email, "password": password},
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(const Duration(seconds: 10));
 
-      print("LOGIN STATUS: ${response.statusCode}");
-      print("LOGIN BODY: ${response.body}");
-
-      final data = jsonDecode(response.body);
-
-      return data;
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw Exception("Server lambat");
+    } on SocketException {
+      throw Exception("Tidak ada koneksi internet");
     } catch (e) {
-      print("ERROR LOGIN: $e");
-      throw Exception("Koneksi gagal");
+      throw Exception("Error: $e");
     }
   }
 
-  //helper untuk ambil data alumni dari response cek-alumni
-  static Map<String, dynamic>? getAlumni(Map<String, dynamic> data) {
-    return data['alumni'];
-  }
-
+  // ==============================
   // GET QUESTIONS
+  // ==============================
   static Future<Map<String, dynamic>> getQuestions(int userId) async {
     try {
       final url = Uri.parse("$baseUrl/questions?user_id=$userId");
 
       final response = await http
           .get(url, headers: {"Accept": "application/json"})
-          .timeout(Duration(seconds: 10));
+          .timeout(const Duration(seconds: 10));
 
-      print("QUESTION STATUS: ${response.statusCode}");
-      print("QUESTION BODY: ${response.body}");
-
-      if (response.body.startsWith("<")) {
-        throw Exception("Server mengembalikan HTML");
-      }
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception("Gagal ambil soal");
-      }
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw Exception("Server lama merespon");
+    } on SocketException {
+      throw Exception("Tidak ada koneksi internet");
     } catch (e) {
-      print("ERROR QUESTION: $e");
-      throw Exception("Koneksi gagal");
+      throw Exception("Error: $e");
     }
   }
 
-  // SUBMIT JAWABAN
+  // ==============================
+  // SUBMIT ANSWERS
+  // ==============================
   static Future<Map<String, dynamic>> submitAnswers(
-    int userId,
-    List answers,
-  ) async {
+      int userId, List answers) async {
     try {
       final url = Uri.parse("$baseUrl/answers");
 
@@ -137,25 +161,50 @@ class ApiService {
               "Accept": "application/json",
               "Content-Type": "application/json",
             },
-            body: jsonEncode({"user_id": userId, "answers": answers}),
+            body: jsonEncode({
+              "user_id": userId,
+              "answers": answers,
+            }),
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(const Duration(seconds: 10));
 
-      print("SUBMIT STATUS: ${response.statusCode}");
-      print("SUBMIT BODY: ${response.body}");
-
-      if (response.body.startsWith("<")) {
-        throw Exception("Server error (HTML)");
-      }
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception("Submit gagal");
-      }
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw Exception("Server lama merespon");
+    } on SocketException {
+      throw Exception("Tidak ada koneksi internet");
     } catch (e) {
-      print("ERROR SUBMIT: $e");
-      throw Exception("Koneksi gagal");
+      throw Exception("Error: $e");
     }
   }
+
+  // ==============================
+  // HELPER ALUMNI
+  // ==============================
+  static Map<String, dynamic>? getAlumni(Map<String, dynamic> data) {
+    return data['data'];
+  }
+
+  // ==============================
+  // Resend otp api
+  // ==============================
+
+  static Future<Map<String, dynamic>> resendOtp(String email) async {
+  try {
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/resend-otp"),
+          headers: {"Accept": "application/json"},
+          body: {"email": email},
+        )
+        .timeout(const Duration(seconds: 10));
+
+    return _handleResponse(response);
+  } catch (e) {
+    throw Exception("Error resend OTP: $e");
+  }
+}
+
+
+
 }

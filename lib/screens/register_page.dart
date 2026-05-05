@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -19,59 +18,78 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool isLoading = false;
 
+  // =========================
+  // VALIDASI EMAIL
+  // =========================
+  bool isValidEmail(String email) {
+    return RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(email);
+  }
+
+  // =========================
+  // REGISTER FUNCTION
+  // =========================
   Future<void> register() async {
-    if (nimController.text.isEmpty ||
-        emailController.text.isEmpty ||
-        passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Semua field wajib diisi")));
+    if (isLoading) return;
+
+    final nim = nimController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (nim.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Semua field wajib diisi")),
+      );
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      final data = await ApiService.register(
-        nimController.text.trim(),
-        emailController.text.trim(),
-        passwordController.text.trim(),
+    if (!isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Format email tidak valid")),
       );
-
-      if (data['status'] == true) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("OTP dikirim ke email")));
-
-        // SIMPAN EMAIL SEBELUM CLEAR
-        final email = emailController.text.trim();
-
-        nimController.clear();
-        emailController.clear();
-        passwordController.clear();
-
-        // PINDAH KE OTP PAGE
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => OtpPage(email: email)),
-        );
-      } else {
-        // Snackbar gagal register
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message']), backgroundColor: Colors.red),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      return;
     }
 
-    setState(() {
-      isLoading = false;
-    });
+    setState(() => isLoading = true);
+
+    try {
+      final data = await ApiService.register(nim, email, password);
+
+      if (!mounted) return;
+
+      if (data['status'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("OTP berhasil dikirim")),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtpPage(email: email),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data['message'] ?? "Register gagal"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } on TimeoutException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Server lama merespon")),
+      );
+    } on SocketException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Tidak ada koneksi internet")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -87,7 +105,9 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       body: Stack(
         children: [
+          // =========================
           // BACKGROUND
+          // =========================
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -103,19 +123,21 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ),
 
-          // BUTTON BACK
+          // =========================
+          // BACK BUTTON
+          // =========================
           Positioned(
             top: 40,
             left: 10,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, size: 28),
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
             ),
           ),
 
+          // =========================
           // FORM
+          // =========================
           Center(
             child: SingleChildScrollView(
               child: Card(
@@ -140,9 +162,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       const SizedBox(height: 25),
 
+                      // =========================
                       // NIM
+                      // =========================
                       TextField(
                         controller: nimController,
+                        textInputAction: TextInputAction.next,
+                        enabled: !isLoading,
                         decoration: InputDecoration(
                           labelText: "NIM",
                           prefixIcon: const Icon(Icons.badge),
@@ -154,9 +180,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 15),
 
+                      // =========================
                       // EMAIL
+                      // =========================
                       TextField(
                         controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        enabled: !isLoading,
                         decoration: InputDecoration(
                           labelText: "Email",
                           prefixIcon: const Icon(Icons.email),
@@ -168,10 +199,15 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 15),
 
+                      // =========================
                       // PASSWORD
+                      // =========================
                       TextField(
                         controller: passwordController,
                         obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        enabled: !isLoading,
+                        onSubmitted: (_) => register(),
                         decoration: InputDecoration(
                           labelText: "Password",
                           prefixIcon: const Icon(Icons.lock),
@@ -183,34 +219,41 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 20),
 
+                      // =========================
                       // BUTTON
+                      // =========================
                       SizedBox(
                         width: double.infinity,
                         height: 45,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(
-                              255,
-                              51,
-                              106,
-                              224,
-                            ),
+                            backgroundColor: const Color.fromARGB(255, 51, 106, 224),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           onPressed: isLoading ? null : register,
-                          child: isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  "Register",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            child: isLoading
+                                ? const SizedBox(
+                                    key: ValueKey("loading"),
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Register",
+                                    key: ValueKey("text"),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                ),
+                          ),
                         ),
                       ),
                     ],
@@ -219,6 +262,17 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
+
+          // =========================
+          // LOADING OVERLAY
+          // =========================
+          if (isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
         ],
       ),
     );
