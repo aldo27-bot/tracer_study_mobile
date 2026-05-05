@@ -64,7 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => OtpPage(email: email),
+            builder: (_) => OtpPage(email: email, type: 'register'),
           ),
         );
       } else {

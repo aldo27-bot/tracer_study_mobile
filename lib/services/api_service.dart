@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static String baseUrl = "http://192.168.1.8:8000/api";
+  static String baseUrl = "http://172.16.115.119:8000/api";
 
   // ==============================
   // HELPER
@@ -81,13 +81,13 @@ class ApiService {
   // VERIFY OTP
   // ==============================
   static Future<Map<String, dynamic>> verifyOtp(
-      String email, String otp) async {
+      String email, String otp, String type) async {
     try {
       final response = await http
           .post(
             Uri.parse("$baseUrl/verify-otp"),
             headers: {"Accept": "application/json"},
-            body: {'email': email, 'otp': otp},
+            body: {'email': email, 'otp': otp, 'type': type},
           )
           .timeout(const Duration(seconds: 10));
 
@@ -189,13 +189,15 @@ class ApiService {
   // Resend otp api
   // ==============================
 
-  static Future<Map<String, dynamic>> resendOtp(String email) async {
+  static Future<Map<String, dynamic>> resendOtp(String email, String type) async {
   try {
     final response = await http
         .post(
           Uri.parse("$baseUrl/resend-otp"),
           headers: {"Accept": "application/json"},
-          body: {"email": email},
+          body: {
+            "email": email,
+             "type": type},
         )
         .timeout(const Duration(seconds: 10));
 
@@ -205,6 +207,49 @@ class ApiService {
   }
 }
 
+  // ==============================
+  // Forgot password
+  // ==============================
+
+static Future<Map<String, dynamic>> forgotPassword(String email) async {
+  try {
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/forgot-password"),
+          headers: {"Accept": "application/json"},
+          body: {
+            "email": email,
+          },
+        )
+        .timeout(const Duration(seconds: 10));
+
+    return _handleResponse(response);
+  } catch (e) {
+    throw Exception("Error forgot password: $e");
+  }
+}
+
+  // ==============================
+  // Reset password
+  // ==============================
+
+static Future<Map<String, dynamic>> resetPassword(
+    String email, String password) async {
+  try {
+    final response = await http.post(
+      Uri.parse("$baseUrl/reset-password-otp"),
+      headers: {"Accept": "application/json"},
+      body: {
+        "email": email,
+        "password": password,
+      },
+    );
+
+    return _handleResponse(response);
+  } catch (e) {
+    throw Exception("Error reset password: $e");
+  }
+}
 
 
 }
