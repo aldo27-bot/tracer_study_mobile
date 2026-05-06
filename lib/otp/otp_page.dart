@@ -17,9 +17,9 @@ class _OtpPageState extends State<OtpPage> {
 
   Future<void> verifyOtp() async {
     if (otpController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Masukkan OTP")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Masukkan OTP")));
       return;
     }
 
@@ -32,21 +32,21 @@ class _OtpPageState extends State<OtpPage> {
       );
 
       if (data['status'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Verifikasi berhasil")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Verifikasi berhasil")));
 
         // kembali ke login
         Navigator.popUntil(context, (route) => route.isFirst);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'])),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(data['message'])));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
 
     setState(() => isLoading = false);
@@ -82,7 +82,7 @@ class _OtpPageState extends State<OtpPage> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text("Verifikasi"),
               ),
-            )
+            ),
           ],
         ),
       ),
