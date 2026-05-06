@@ -9,6 +9,7 @@ import 'dart:async'; // untuk TimeoutException
 import 'dart:io'; // untuk SocketException
 import '../main.dart'; // untuk MainPage
 import '../otp/otp_page.dart'; // untuk OtpPage
+import 'lupa_password.dart'; // untuk LupaPasswordPage
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -65,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => OtpPage(email: emailController.text.trim()),
+              builder: (_) => OtpPage(email: emailController.text.trim(), type: 'login'),
             ),
           );
         }
@@ -206,6 +207,14 @@ class _LoginPageState extends State<LoginPage> {
                       },
                       child: Text("Belum punya akun? Register"),
                     ),
+
+                    TextButton(onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => LupaPasswordPage(email: emailController.text.trim())),
+                      );
+                    },
+                      child: Text("Lupa Password?"))
                   ],
                 ),
               ),

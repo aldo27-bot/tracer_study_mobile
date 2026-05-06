@@ -1,11 +1,15 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:projectsemester4/resetpassword/resetpassword.dart';
 import 'package:projectsemester4/services/api_service.dart';
+import '../screens/lupa_password.dart';
+import '../screens/login_page.dart';
 
 class OtpPage extends StatefulWidget {
   final String email;
+  final String type; // 'register' atau 'forgot'
 
-  const OtpPage({Key? key, required this.email}) : super(key: key);
+  const OtpPage({Key? key, required this.email, required this.type})
+    : super(key: key);
 
   @override
   State<OtpPage> createState() => _OtpPageState();
@@ -29,6 +33,7 @@ class _OtpPageState extends State<OtpPage> {
       final data = await ApiService.verifyOtp(
         widget.email,
         otpController.text.trim(),
+        widget.type,
       );
 
       if (data['status'] == true) {
@@ -36,20 +41,40 @@ class _OtpPageState extends State<OtpPage> {
           context,
         ).showSnackBar(const SnackBar(content: Text("Verifikasi berhasil")));
 
-        // kembali ke login
-        Navigator.popUntil(context, (route) => route.isFirst);
+        // LOGIC UTAMA DI SINI
+        if (widget.type == 'register') {
+          //selesai register → ke login
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+            (route) => false,
+          );
+        } else if (widget.type == 'forgot') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ResetPasswordPage(email: widget.email),
+            ),
+          );
+        }
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(data['message'])));
+        ).showSnackBar(SnackBar(content: Text(data['message'] ?? "OTP salah")));
       }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ).showSnackBar(const SnackBar(content: Text("Terjadi kesalahan")));
+    } finally {
+      setState(() => isLoading = false);
     }
+  }
 
-    setState(() => isLoading = false);
+  @override
+  void dispose() {
+    otpController.dispose();
+    super.dispose();
   }
 
   @override
