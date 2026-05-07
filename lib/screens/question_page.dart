@@ -24,26 +24,26 @@ class _QuestionPageState extends State<QuestionPage> {
 
   // ================= LOAD DATA =================
   Future<void> loadData() async {
-  try {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    userId = prefs.getInt('user_id') ?? 0;
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      userId = prefs.getInt('user_id') ?? 0;
 
-    // SEKARANG LANGSUNG LIST
-    List qList = await ApiService.getQuestions(userId);
+      // SEKARANG LANGSUNG LIST
+      List qList = await ApiService.getQuestions(userId);
 
-    debugPrint("QUESTIONS: $qList");
+      debugPrint("QUESTIONS: $qList");
 
-    if (mounted) {
-      setState(() {
-        questions = List<Map<String, dynamic>>.from(qList);
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          questions = List<Map<String, dynamic>>.from(qList);
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("ERROR LOAD DATA: $e");
+      setState(() => isLoading = false);
     }
-  } catch (e) {
-    debugPrint("ERROR LOAD DATA: $e");
-    setState(() => isLoading = false);
   }
-}
 
   // ================= CONDITIONAL =================
   bool shouldShow(Map<String, dynamic> q) {
@@ -70,7 +70,7 @@ class _QuestionPageState extends State<QuestionPage> {
     String type = q['type']?.toString() ?? "";
     String dataType = q['tipe_data']?.toString() ?? "text";
 
-    // ✅ SUPER SAFE OPTIONS (ANTI CRASH)
+    // SUPER SAFE OPTIONS (ANTI CRASH)
     List options = [];
     if (q['options'] is List) {
       options = q['options'];
@@ -265,9 +265,28 @@ class _QuestionPageState extends State<QuestionPage> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: ElevatedButton(
-            onPressed: submit,
-            child: const Text("Kirim Jawaban"),
+
+          child: SizedBox(
+            height: 60,
+            width: 200,
+            
+            child: ElevatedButton(
+              onPressed: submit,
+
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0F2D3F), // warna button
+                foregroundColor: const Color.fromARGB(255, 236, 112, 4), // warna teks
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+
+              child: const Text(
+                "Kirim Jawaban",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ),
       ),

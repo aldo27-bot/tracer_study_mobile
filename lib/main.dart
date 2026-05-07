@@ -70,10 +70,7 @@ class _MainPageState extends State<MainPage> {
       final notification = message.notification;
 
       if (notification != null) {
-        NotifService.show(
-          notification.title ?? '',
-          notification.body ?? '',
-        );
+        NotifService.show(notification.title ?? '', notification.body ?? '');
       }
     });
 
@@ -125,12 +122,12 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isActive ? Colors.blue : Colors.grey),
+            Icon(icon, color: isActive ? const Color(0xFF0F2D3F) : Colors.grey),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isActive ? Colors.blue : Colors.grey,
+                color: isActive ? const Color.fromARGB(255, 236, 112, 4) : Colors.grey,
               ),
             ),
           ],
@@ -144,19 +141,24 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       body: _pages[_currentIndex],
 
-      bottomNavigationBar: Container(
-        height: 60,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
-        ),
-        child: Row(
-          children: [
-            buildNavItem(Icons.home, 0, _labels[0]),
-            buildNavItem(Icons.assignment, 1, _labels[1]),
-            buildNavItem(Icons.notifications, 2, _labels[2]),
-            buildNavItem(Icons.person, 3, _labels[3]),
-          ],
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          height: 70,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8), // kasih jarak kecil
+            child: Row(
+              children: [
+                buildNavItem(Icons.home, 0, _labels[0]),
+                buildNavItem(Icons.assignment, 1, _labels[1]),
+                buildNavItem(Icons.notifications, 2, _labels[2]),
+                buildNavItem(Icons.person, 3, _labels[3]),
+              ],
+            ),
+          ),
         ),
       ),
     );

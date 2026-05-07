@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:projectsemester4/services/api_service.dart';
+
 import '../otp/otp_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
 
   @override
-  _RegisterPageState createState() => _RegisterPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
@@ -17,17 +19,16 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
 
   bool isLoading = false;
+  bool obscurePassword = true;
 
-  // =========================
   // VALIDASI EMAIL
-  // =========================
   bool isValidEmail(String email) {
-    return RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(email);
+    return RegExp(
+      r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$",
+    ).hasMatch(email);
   }
 
-  // =========================
   // REGISTER FUNCTION
-  // =========================
   Future<void> register() async {
     if (isLoading) return;
 
@@ -35,16 +36,22 @@ class _RegisterPageState extends State<RegisterPage> {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    if (nim.isEmpty || email.isEmpty || password.isEmpty) {
+    if (nim.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Semua field wajib diisi")),
+        const SnackBar(
+          content: Text("Semua field wajib diisi"),
+        ),
       );
       return;
     }
 
     if (!isValidEmail(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Format email tidak valid")),
+        const SnackBar(
+          content: Text("Format email tidak valid"),
+        ),
       );
       return;
     }
@@ -52,43 +59,64 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => isLoading = true);
 
     try {
-      final data = await ApiService.register(nim, email, password);
+      final data = await ApiService.register(
+        nim,
+        email,
+        password,
+      );
 
       if (!mounted) return;
 
       if (data['status'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("OTP berhasil dikirim")),
+          const SnackBar(
+            content: Text("OTP berhasil dikirim"),
+          ),
         );
 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => OtpPage(email: email, type: 'register'),
+            builder: (_) => OtpPage(
+              email: email,
+              type: 'register',
+            ),
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(data['message'] ?? "Register gagal"),
+            content: Text(
+              data['message'] ?? "Register gagal",
+            ),
             backgroundColor: Colors.red,
           ),
         );
       }
     } on TimeoutException {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Server lama merespon")),
+        const SnackBar(
+          content: Text("Server lama merespon"),
+        ),
       );
     } on SocketException {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tidak ada koneksi internet")),
+        const SnackBar(
+          content: Text(
+            "Tidak ada koneksi internet",
+          ),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(
+          content: Text("Error: $e"),
+        ),
       );
     } finally {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -100,180 +128,328 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  Widget buildInputField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword ? obscurePassword : false,
+        enabled: !isLoading,
+        decoration: InputDecoration(
+          hintText: hint,
+          border: InputBorder.none,
+
+          prefixIcon: Icon(
+            icon,
+            color: Colors.grey,
+          ),
+
+          suffixIcon: isPassword
+              ? IconButton(
+                  onPressed: () {
+                    setState(() {
+                      obscurePassword =
+                          !obscurePassword;
+                    });
+                  },
+                  icon: Icon(
+                    obscurePassword
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                )
+              : null,
+
+          contentPadding:
+              const EdgeInsets.symmetric(
+            vertical: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // =========================
-          // BACKGROUND
-          // =========================
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.white,
-                  Colors.blue.shade100,
-                  Colors.blue.shade300,
-                  Colors.blue.shade600,
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
+      resizeToAvoidBottomInset: true,
+      backgroundColor: const Color(0xFFF7F7F7),
 
-          // =========================
-          // BACK BUTTON
-          // =========================
-          Positioned(
-            top: 40,
-            left: 10,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, size: 28),
-              onPressed: () => Navigator.pop(context),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.only(
+              bottom: 30,
             ),
-          ),
+            child: Column(
+              children: [
+                // TOP SHAPE
+                Stack(
+                  children: [
+                    Container(
+                      height: 220,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0F2D3F),
+                        borderRadius:
+                            BorderRadius.only(
+                          bottomLeft:
+                              Radius.circular(120),
+                          bottomRight:
+                              Radius.circular(120),
+                        ),
+                      ),
+                    ),
 
-          // =========================
-          // FORM
-          // =========================
-          Center(
-            child: SingleChildScrollView(
-              child: Card(
-                elevation: 10,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                    Positioned(
+                      top: 35,
+                      left: 20,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration:
+                            const BoxDecoration(
+                          color: Color(0xFF5D7B93),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      top: 45,
+                      right: 20,
+                      child: Icon(
+                        Icons.app_registration,
+                        size: 90,
+                        color: Colors.white
+                            .withOpacity(0.15),
+                      ),
+                    ),
+
+                    // BACK BUTTON
+                    Positioned(
+                      top: 20,
+                      left: 10,
+                      child: IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                margin: const EdgeInsets.symmetric(horizontal: 25),
-                child: Padding(
-                  padding: const EdgeInsets.all(25),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.app_registration, size: 80),
-                      const SizedBox(height: 10),
-                      const Text(
-                        "Register Alumni",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 25),
 
-                      // =========================
-                      // NIM
-                      // =========================
-                      TextField(
-                        controller: nimController,
-                        textInputAction: TextInputAction.next,
-                        enabled: !isLoading,
-                        decoration: InputDecoration(
-                          labelText: "NIM",
-                          prefixIcon: const Icon(Icons.badge),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                // REGISTER CARD
+                Transform.translate(
+                  offset: const Offset(0, -40),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(
+                      horizontal: 24,
+                    ),
+                    child: Container(
+                      padding:
+                          const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black
+                                .withOpacity(0.08),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           ),
-                        ),
+                        ],
                       ),
 
-                      const SizedBox(height: 15),
+                      child: Column(
+                        children: [
+                          // IMAGE
+                          Container(
+                            height: 120,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(
+                                      22),
+                              color:
+                                  const Color(0xFFF5F5F5),
+                            ),
 
-                      // =========================
-                      // EMAIL
-                      // =========================
-                      TextField(
-                        controller: emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        enabled: !isLoading,
-                        decoration: InputDecoration(
-                          labelText: "Email",
-                          prefixIcon: const Icon(Icons.email),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      // =========================
-                      // PASSWORD
-                      // =========================
-                      TextField(
-                        controller: passwordController,
-                        obscureText: true,
-                        textInputAction: TextInputAction.done,
-                        enabled: !isLoading,
-                        onSubmitted: (_) => register(),
-                        decoration: InputDecoration(
-                          labelText: "Password",
-                          prefixIcon: const Icon(Icons.lock),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // =========================
-                      // BUTTON
-                      // =========================
-                      SizedBox(
-                        width: double.infinity,
-                        height: 45,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(255, 51, 106, 224),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.all(
+                                      12),
+                              child: Image.asset(
+                                "assets/Signup-amico.png",
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
-                          onPressed: isLoading ? null : register,
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            child: isLoading
-                                ? const SizedBox(
-                                    key: ValueKey("loading"),
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    "Register",
-                                    key: ValueKey("text"),
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+
+                          const SizedBox(height: 18),
+
+                          // TITLE
+                          const Align(
+                            alignment:
+                                Alignment.centerLeft,
+                            child: Text(
+                              "Register",
+                              style: TextStyle(
+                                fontSize: 30,
+                                fontWeight:
+                                    FontWeight.bold,
+                                color:
+                                    Color(0xFF22313F),
+                              ),
+                            ),
                           ),
-                        ),
+
+                          const SizedBox(height: 6),
+
+                          const Align(
+                            alignment:
+                                Alignment.centerLeft,
+                            child: Text(
+                              "Create your alumni account.",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          // NIM
+                          buildInputField(
+                            controller:
+                                nimController,
+                            hint: "NIM",
+                            icon: Icons.badge_outlined,
+                          ),
+
+                          // EMAIL
+                          buildInputField(
+                            controller:
+                                emailController,
+                            hint: "Email",
+                            icon: Icons.email_outlined,
+                          ),
+
+                          // PASSWORD
+                          buildInputField(
+                            controller:
+                                passwordController,
+                            hint: "Password",
+                            icon: Icons.lock_outline,
+                            isPassword: true,
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // REGISTER BUTTON
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton(
+                              onPressed: isLoading
+                                  ? null
+                                  : register,
+
+                              style:
+                                  ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    const Color(
+                                        0xFF0F2D3F),
+                                elevation: 0,
+                                shape:
+                                    RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius
+                                          .circular(
+                                              18),
+                                ),
+                              ),
+
+                              child: isLoading
+                                  ? const CircularProgressIndicator(
+                                      color:
+                                          Colors.white,
+                                    )
+                                  : const Text(
+                                      "Register",
+                                      style:
+                                          TextStyle(
+                                        fontSize: 16,
+                                        color:
+                                            Colors.white,
+                                        fontWeight:
+                                            FontWeight
+                                                .bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // LOGIN
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment
+                                    .center,
+                            children: [
+                              const Text(
+                                "Already have account? ",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
+
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pop(
+                                      context);
+                                },
+                                child: const Text(
+                                  "Sign In",
+                                  style: TextStyle(
+                                    color: Color(
+                                        0xFF0F2D3F),
+                                    fontWeight:
+                                        FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
-
-          // =========================
-          // LOADING OVERLAY
-          // =========================
-          if (isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }

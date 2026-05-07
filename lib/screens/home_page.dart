@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:table_calendar/table_calendar.dart';
+
 import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   String name = "";
+  double progress = 0.65;
+
+  DateTime focusedDay = DateTime.now();
+  DateTime selectedDay = DateTime.now();
 
   @override
   void initState() {
@@ -31,18 +37,17 @@ class _HomePageState extends State<HomePage> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => LoginPage()),
+      MaterialPageRoute(builder: (_) => const LoginPage()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FB),
-
+      backgroundColor: const Color(0xFFF3F6FB),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -50,92 +55,158 @@ class _HomePageState extends State<HomePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.grid_view_rounded),
+                  const SizedBox(), // biar kiri kosong tetap seimbang
+
                   IconButton(
                     onPressed: () => logout(context),
-                    icon: Icon(Icons.logout),
+                    icon: const Icon(Icons.logout),
                   ),
                 ],
               ),
 
-              SizedBox(height: 10),
+              const SizedBox(height: 0),
 
-              // GREETING
               Text(
-                "Hi ${name.isNotEmpty ? name : 'Alumni'}",
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-              ),
-
-              // SEARCH
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 15),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    icon: Icon(Icons.search),
-                    hintText: "Cari",
-                    border: InputBorder.none,
-                  ),
+                "Halo ${name.isNotEmpty ? name : 'Alumni'}",
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
-              SizedBox(height: 20),
+              const Text(
+                "Dashboard Tracer Study",
+                style: TextStyle(color: Colors.grey),
+              ),
 
-              // WELCOME CARD
+              const SizedBox(height: 20),
+
+              // PROGRESS CARD
               Container(
-                padding: EdgeInsets.all(15),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
+                  color: const Color(0xFF0F2D3F),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.black12),
-                  color: Colors.white,
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Text(
-                        "Selamat datang!\nCek informasi terbaru seputar kampusmu di sini.",
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Tracer Study Progress",
+                          style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Lengkapi Data Kamu",
+                          style: TextStyle(
+                            color:  const Color.fromARGB(255, 236, 112, 4),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          "${(progress * 100).toInt()}% selesai",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ],
                     ),
 
-                    // image assets
-                    Image.asset("assets/work.png", height: 70),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          height: 70,
+                          width: 70,
+                          child: CircularProgressIndicator(
+                            value: progress,
+                            color:  const Color.fromARGB(255, 236, 112, 4),
+                            backgroundColor: Colors.white24,
+                            strokeWidth: 6,
+                          ),
+                        ),
+                        Text(
+                          "${(progress * 100).toInt()}%",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-              // TITLE
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Ongoing Projects",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              // CALENDAR
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 10),
+                  ],
+                ),
+                padding: const EdgeInsets.all(12),
+                child: TableCalendar(
+                  focusedDay: focusedDay,
+                  firstDay: DateTime(2020),
+                  lastDay: DateTime(2030),
+
+                  selectedDayPredicate: (day) => isSameDay(selectedDay, day),
+
+                  onDaySelected: (selected, focused) {
+                    setState(() {
+                      selectedDay = selected;
+                      focusedDay = focused;
+                    });
+                  },
+
+                  onPageChanged: (focused) {
+                    focusedDay = focused;
+                  },
+
+                  headerStyle: const HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
                   ),
-                  Text("view all", style: TextStyle(color: Colors.grey)),
-                ],
+
+                  calendarStyle: const CalendarStyle(
+                    todayDecoration: BoxDecoration(
+                      color:  const Color.fromARGB(255, 236, 112, 4),
+                      shape: BoxShape.circle,
+                    ),
+                    selectedDecoration: BoxDecoration(
+                      color: Color(0xFF0F2D3F),
+                      shape: BoxShape.circle,
+                    ),
+                    selectedTextStyle: TextStyle(color: Colors.white),
+                  ),
+                ),
               ),
 
-              SizedBox(height: 15),
+              const SizedBox(height: 20),
 
-              // GRID PROJECT
-              Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  children: [
-                    buildCard("Mobile App", "May 28, 2022", true),
-                    buildCard("Dashboard", "May 28, 2022", false),
-                    buildCard("Banner", "May 30, 2022", false),
-                    buildCard("UI/UX", "May 30, 2022", false),
-                  ],
-                ),
+              const Text(
+                "Statistik Alumni",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 10),
+
+              Row(
+                children: [
+                  statCard("Kerja", "75%", Colors.green),
+                  const SizedBox(width: 10),
+                  statCard("Kuliah", "15%", Colors.orange),
+                  const SizedBox(width: 10),
+                  statCard("Wirausaha", "10%", Colors.blue),
+                ],
               ),
             ],
           ),
@@ -144,39 +215,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget buildCard(String title, String date, bool isMain) {
-    return Container(
-      padding: EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: isMain ? Colors.blue : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(blurRadius: 5, color: Colors.black12)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            date,
-            style: TextStyle(
-              color: isMain ? Colors.white70 : Colors.grey,
-              fontSize: 12,
+  Widget statCard(String title, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isMain ? Colors.white : Colors.black,
-            ),
-          ),
-          Spacer(),
-          LinearProgressIndicator(
-            value: 0.5,
-            backgroundColor: isMain ? Colors.white24 : Colors.grey.shade300,
-            color: isMain ? Colors.white : Colors.blue,
-          ),
-        ],
+            const SizedBox(height: 5),
+            Text(title),
+          ],
+        ),
       ),
     );
   }

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static String baseUrl = "http://172.16.103.150:8000/api";
+  static String baseUrl = "http://192.168.1.8:8000/api";
 
   // ==============================
   // HELPER
