@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "247796808878",
+    "project_id": "tracer-study-app-edcbd",
+    "storage_bucket": "tracer-study-app-edcbd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:247796808878:android:5b6c4e84b87e0f87f4413f",
+        "android_client_info": {
+          "package_name": "com.example.projectsemester4"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVFTwXvjsnNt1zND2Tr8NNq7bm8tXVSPw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

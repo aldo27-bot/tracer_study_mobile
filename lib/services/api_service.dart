@@ -4,14 +4,15 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static String baseUrl = "http://172.16.115.119:8000/api";
+  static String baseUrl = "http://172.16.103.150:8000/api";
 
   // ==============================
   // HELPER
   // ==============================
   static void _checkHtmlResponse(String body) {
-    if (body.startsWith("<")) {
-      throw Exception("Server error (HTML response)");
+    final trimmed = body.trimLeft();
+    if (trimmed.startsWith("<")) {
+      throw Exception("Server mengembalikan HTML (error backend)");
     }
   }
 
@@ -39,8 +40,7 @@ class ApiService {
   static Future<Map<String, dynamic>> cekAlumni(String nim) async {
     final url = Uri.parse("$baseUrl/cek-alumni?nim=$nim");
 
-    final response =
-        await http.get(url).timeout(const Duration(seconds: 10));
+    final response = await http.get(url).timeout(const Duration(seconds: 10));
 
     return _handleResponse(response);
   }
@@ -53,11 +53,13 @@ class ApiService {
     String email,
     String password,
   ) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/register"),
-      headers: {"Accept": "application/json"},
-      body: {"nim": nim, "email": email, "password": password},
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/register"),
+          headers: {"Accept": "application/json"},
+          body: {"nim": nim, "email": email, "password": password},
+        )
+        .timeout(const Duration(seconds: 10));
 
     return _handleResponse(response);
   }
@@ -70,15 +72,13 @@ class ApiService {
     String otp,
     String type,
   ) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/verify-otp"),
-      headers: {"Accept": "application/json"},
-      body: {
-        "email": email,
-        "otp": otp,
-        "type": type,
-      },
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/verify-otp"),
+          headers: {"Accept": "application/json"},
+          body: {"email": email, "otp": otp, "type": type},
+        )
+        .timeout(const Duration(seconds: 10));
 
     return _handleResponse(response);
   }
@@ -90,11 +90,13 @@ class ApiService {
     String email,
     String password,
   ) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/login"),
-      headers: {"Accept": "application/json"},
-      body: {"email": email, "password": password},
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/login"),
+          headers: {"Accept": "application/json"},
+          body: {"email": email, "password": password},
+        )
+        .timeout(const Duration(seconds: 10));
 
     return _handleResponse(response);
   }
@@ -103,11 +105,13 @@ class ApiService {
   // FORGOT PASSWORD (FIX)
   // ==============================
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/forgot-password"),
-      headers: {"Accept": "application/json"},
-      body: {"email": email},
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/forgot-password"),
+          headers: {"Accept": "application/json"},
+          body: {"email": email},
+        )
+        .timeout(const Duration(seconds: 10));
 
     return _handleResponse(response);
   }
@@ -119,14 +123,13 @@ class ApiService {
     String email,
     String password,
   ) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/reset-password-otp"),
-      headers: {"Accept": "application/json"},
-      body: {
-        "email": email,
-        "password": password,
-      },
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/reset-password-otp"),
+          headers: {"Accept": "application/json"},
+          body: {"email": email, "password": password},
+        )
+        .timeout(const Duration(seconds: 10));
 
     return _handleResponse(response);
   }
@@ -135,11 +138,13 @@ class ApiService {
   // RESEND OTP (FIXED)
   // ==============================
   static Future<Map<String, dynamic>> resendOtp(String email) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/resend-otp"),
-      headers: {"Accept": "application/json"},
-      body: {"email": email},
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/resend-otp"),
+          headers: {"Accept": "application/json"},
+          body: {"email": email},
+        )
+        .timeout(const Duration(seconds: 10));
 
     return _handleResponse(response);
   }
@@ -147,14 +152,27 @@ class ApiService {
   // ==============================
   // QUESTIONS
   // ==============================
-  static Future<Map<String, dynamic>> getQuestions(int userId) async {
+  static Future<List> getQuestions(int userId) async {
     final url = Uri.parse("$baseUrl/questions?user_id=$userId");
 
     final response = await http
         .get(url, headers: {"Accept": "application/json"})
         .timeout(const Duration(seconds: 10));
 
-    return _handleResponse(response);
+    final res = _handleResponse(response);
+
+    var data = res['data'];
+
+    // NORMALISASI DATA
+    if (data is String) {
+      data = jsonDecode(data);
+    }
+
+    if (data is List) {
+      return data;
+    }
+
+    return [];
   }
 
   // ==============================
@@ -164,17 +182,16 @@ class ApiService {
     int userId,
     List answers,
   ) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/answers"),
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode({
-        "user_id": userId,
-        "answers": answers,
-      }),
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/answers"),
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
+          body: jsonEncode({"user_id": userId, "answers": answers}),
+        )
+        .timeout(const Duration(seconds: 10));
 
     return _handleResponse(response);
   }
@@ -186,17 +203,16 @@ class ApiService {
     String nim,
     String alamat,
   ) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/update-alamat"),
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode({
-        "nim": nim,
-        "alamat": alamat,
-      }),
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/update-alamat"),
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
+          body: jsonEncode({"nim": nim, "alamat": alamat}),
+        )
+        .timeout(const Duration(seconds: 10));
 
     return _handleResponse(response);
   }
@@ -206,5 +222,19 @@ class ApiService {
   // ==============================
   static Map<String, dynamic>? getAlumni(Map<String, dynamic> data) {
     return data['data'];
+  }
+
+  // ==============================
+  // Kirim fcm token
+  // ==============================
+  static Future<void> sendFcmToken(int userId, String token) async {
+    await http.post(
+      Uri.parse("$baseUrl/save-fcm-token"),
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"user_id": userId, "token": token}),
+    );
   }
 }

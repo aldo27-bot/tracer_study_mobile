@@ -1,21 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'screens/home_page.dart';
 import 'screens/question_page.dart';
 import 'screens/notification_page.dart';
 import 'screens/profile_page.dart';
-import 'package:flutter/services.dart';
+import 'services/api_service.dart';
+import 'services/notif_service.dart';
 import 'models/alumni_models.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("BACKGROUND NOTIF: ${message.notification?.title}");
+}
 
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      systemNavigationBarColor: Colors.black,
-      systemNavigationBarIconBrightness: Brightness.light,
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ),
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  await NotifService.init();
+
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
   );
 
   runApp(const MyApp());
@@ -43,75 +54,86 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    HomePage(),
-    QuestionPage(),
-    NotificationPage(),
-    ProfilePage(
-      alumni: AlumniModel(
-        nama: "Agnes Monika",
-        nim: "E41212xxx",
-        prodi: "TIF Nganjuk",
-        jurusan: "Teknologi Informasi",
-        angkatan: "2021",
-        tempatLahir: "Nganjuk",
-        tanggalLahir: "30 Januari 2003",
-        tahunLulus: "2025",
-        alamat: "", // Biarkan kosong dulu untuk ngetes fitur edit kamu
-        email: "e41241123@student.polije.ac.id",
-      ),
-    ),
-  ];
+  late AlumniModel alumni;
+
+  final List<Widget> _pages = [];
 
   final List<String> _labels = ["Home", "Form", "Notifikasi", "Profil"];
+
+  @override
+  void initState() {
+    super.initState();
+
+    getToken();
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final notification = message.notification;
+
+      if (notification != null) {
+        NotifService.show(
+          notification.title ?? '',
+          notification.body ?? '',
+        );
+      }
+    });
+
+    // default dummy (biar tidak crash)
+    alumni = AlumniModel(
+      nim: "0",
+      nama: "User",
+      prodi: "",
+      jurusan: "",
+      angkatan: "",
+      tempatLahir: "",
+      tanggalLahir: "",
+      tahunLulus: "",
+      alamat: "",
+    );
+
+    _pages.addAll([
+      const HomePage(),
+      const QuestionPage(),
+      const NotificationPage(),
+      ProfilePage(alumni: alumni),
+    ]);
+  }
+
+  Future<void> getToken() async {
+    try {
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+      await messaging.requestPermission();
+
+      String? token = await messaging.getToken();
+
+      print("FCM TOKEN: $token");
+
+      if (token != null) {
+        await ApiService.sendFcmToken(1, token);
+      }
+    } catch (e) {
+      print("FCM ERROR: $e");
+    }
+  }
 
   Widget buildNavItem(IconData icon, int index, String label) {
     bool isActive = _currentIndex == index;
 
-    return Flexible(
-      fit: FlexFit.tight,
+    return Expanded(
       child: InkWell(
         onTap: () => setState(() => _currentIndex = index),
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min, // penting anti overflow
-                children: [
-                  Icon(
-                    icon,
-                    size: 24,
-                    color: isActive ? Colors.blueAccent : Colors.grey,
-                  ),
-
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    child: isActive
-                        ? Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 60),
-                              child: Text(
-                                label,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? Colors.blue : Colors.grey),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isActive ? Colors.blue : Colors.grey,
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -120,42 +142,21 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       body: _pages[_currentIndex],
 
-      bottomNavigationBar: MediaQuery.removePadding(
-        context: context,
-        removeBottom: true,
-        child: SafeArea(
-          top: false,
-          child: Container(
-            margin: const EdgeInsets.only(left: 5, right: 5, bottom: 40),
-            height: 60,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 230, 230, 230),
-              borderRadius: BorderRadius.circular(16),
-              border: const Border(
-                top: BorderSide(color: Colors.black, width: 1),
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                buildNavItem(Icons.home, 0, _labels[0]),
-                buildNavItem(Icons.assignment, 1, _labels[1]),
-                buildNavItem(Icons.notification_add, 2, _labels[2]),
-                buildNavItem(Icons.person, 3, _labels[3]),
-              ],
-            ),
-          ),
+      bottomNavigationBar: Container(
+        height: 60,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+        ),
+        child: Row(
+          children: [
+            buildNavItem(Icons.home, 0, _labels[0]),
+            buildNavItem(Icons.assignment, 1, _labels[1]),
+            buildNavItem(Icons.notifications, 2, _labels[2]),
+            buildNavItem(Icons.person, 3, _labels[3]),
+          ],
         ),
       ),
     );

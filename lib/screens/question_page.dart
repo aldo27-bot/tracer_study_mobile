@@ -7,252 +7,251 @@ class QuestionPage extends StatefulWidget {
   const QuestionPage({super.key});
 
   @override
-  _QuestionPageState createState() => _QuestionPageState();
+  State<QuestionPage> createState() => _QuestionPageState();
 }
 
 class _QuestionPageState extends State<QuestionPage> {
-  List questions = [];
+  List<Map<String, dynamic>> questions = [];
   Map<int, dynamic> answers = {};
-
   bool isLoading = true;
+  int userId = 0;
 
   @override
   void initState() {
     super.initState();
-    loadUserAndFetch();
+    loadData();
   }
 
-  void loadUserAndFetch() async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      int userId = prefs.getInt('user_id') ?? 0;
+  // ================= LOAD DATA =================
+  Future<void> loadData() async {
+  try {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getInt('user_id') ?? 0;
 
-      if (userId == 0) {
-        print("USER ID TIDAK ADA");
-        return;
-      }
+    // SEKARANG LANGSUNG LIST
+    List qList = await ApiService.getQuestions(userId);
 
-      var res = await ApiService.getQuestions(userId);
+    debugPrint("QUESTIONS: $qList");
 
-      print("RESPONSE: $res");
-
-      if (res['data'] == null) {
-        print("DATA NULL");
-        return;
-      }
-
-      List qList = res['data'] is String
-          ? jsonDecode(res['data'])
-          : res['data'];
-
-      for (var q in qList) {
-        int id = int.parse(q['id'].toString());
-
-        if (q['answer'] != null) {
-          answers[id] = q['answer'];
-        }
-      }
-
+    if (mounted) {
       setState(() {
-        questions = qList;
+        questions = List<Map<String, dynamic>>.from(qList);
         isLoading = false;
       });
-    } catch (e) {
-      print("ERROR LOAD: $e");
     }
+  } catch (e) {
+    debugPrint("ERROR LOAD DATA: $e");
+    setState(() => isLoading = false);
+  }
+}
+
+  // ================= CONDITIONAL =================
+  bool shouldShow(Map<String, dynamic> q) {
+    int id = int.tryParse(q['id'].toString()) ?? 0;
+    final status = answers[1]?.toString() ?? "";
+
+    if (id == 2) return status.contains("Bekerja");
+    if (id == 3) return status.contains("Wiraswasta");
+
+    return true;
   }
 
-  // ================= INPUT BUILDER =================
-  Widget buildInput(q) {
-    int id = int.parse(q['id'].toString());
-    String type = q['type'];
+  // ================= DECORATION =================
+  InputDecoration _dec(String h) => InputDecoration(
+    hintText: h,
+    filled: true,
+    fillColor: Colors.grey.shade100,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+  );
 
-    if (type == "text") {
+  // ================= INPUT =================
+  Widget buildInput(Map<String, dynamic> q) {
+    int id = int.tryParse(q['id'].toString()) ?? 0;
+    String type = q['type']?.toString() ?? "";
+    String dataType = q['tipe_data']?.toString() ?? "text";
+
+    // ✅ SUPER SAFE OPTIONS (ANTI CRASH)
+    List options = [];
+    if (q['options'] is List) {
+      options = q['options'];
+    }
+
+    // ================= TEXT =================
+    if (type == "text" && dataType == "text") {
       return TextFormField(
-        initialValue: answers[id]?.toString() ?? "",
-        onChanged: (val) => answers[id] = val,
-        decoration: InputDecoration(
-          hintText: "Tulis jawaban...",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+        initialValue: answers[id]?.toString(),
+        onChanged: (v) => answers[id] = v,
+        decoration: _dec("Jawaban..."),
       );
     }
 
-    if (type == "number") {
+    // ================= NUMBER =================
+    if (type == "text" && (dataType == "number" || dataType == "year")) {
       return TextFormField(
         keyboardType: TextInputType.number,
-        initialValue: answers[id]?.toString() ?? "",
-        onChanged: (val) => answers[id] = val,
-        decoration: InputDecoration(
-          hintText: "Masukkan angka...",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        initialValue: answers[id]?.toString(),
+        onChanged: (v) => answers[id] = v,
+        decoration: _dec("Masukkan angka"),
+      );
+    }
+
+    // ================= DATE =================
+    if (type == "text" && dataType == "date") {
+      return InkWell(
+        onTap: () async {
+          DateTime? picked = await showDatePicker(
+            context: context,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+            initialDate: DateTime.now(),
+          );
+
+          if (picked != null) {
+            setState(() {
+              answers[id] = picked.toIso8601String().split("T")[0];
+            });
+          }
+        },
+        child: InputDecorator(
+          decoration: _dec("Pilih tanggal"),
+          child: Text(
+            answers[id]?.toString() ?? "Pilih tanggal",
+            style: TextStyle(
+              color: answers[id] == null ? Colors.grey : Colors.black,
+            ),
+          ),
         ),
       );
     }
 
-    if (type == "radio") {
-      List opsi = q['options'] ?? [];
-
+    // ================= SINGLE =================
+    if (type == "single") {
       return Column(
-        children: opsi.map<Widget>((o) {
+        children: options.map<Widget>((o) {
+          String label = o['label']?.toString() ?? "-";
+
           return RadioListTile(
-            value: o,
+            value: label,
             groupValue: answers[id],
-            onChanged: (val) {
+            onChanged: (v) {
               setState(() {
-                answers[id] = val;
+                answers[id] = v;
+
+                if (id == 1) {
+                  answers.remove(2);
+                  answers.remove(3);
+                }
               });
             },
-            title: Text(o),
+            title: Text(label),
           );
         }).toList(),
       );
     }
 
-    if (type == "checkbox") {
-  List opsi = q['options'] ?? [];
+    // ================= MULTIPLE =================
+    if (type == "multiple") {
+      List selected = List.from(answers[id] ?? []);
 
-  List selected = [];
+      return Column(
+        children: options.map<Widget>((o) {
+          String label = o['label']?.toString() ?? "-";
 
-  var rawAnswer = answers[id];
-
-  if (rawAnswer != null) {
-    if (rawAnswer is String) {
-      try {
-        selected = List<String>.from(jsonDecode(rawAnswer));
-      } catch (e) {
-        selected = [];
-      }
-    } else if (rawAnswer is List) {
-      selected = rawAnswer;
-    }
-  }
-
-  return Column(
-    children: opsi.map<Widget>((o) {
-      return CheckboxListTile(
-        value: selected.contains(o),
-        onChanged: (val) {
-          setState(() {
-            if (val == true) {
-              selected.add(o);
-            } else {
-              selected.remove(o);
-            }
-            answers[id] = selected;
-          });
-        },
-        title: Text(o),
+          return CheckboxListTile(
+            value: selected.contains(label),
+            onChanged: (v) {
+              setState(() {
+                if (v == true) {
+                  selected.add(label);
+                } else {
+                  selected.remove(label);
+                }
+                answers[id] = selected;
+              });
+            },
+            title: Text(label),
+          );
+        }).toList(),
       );
-    }).toList(),
-  );
-}
+    }
 
-    return SizedBox();
+    return const SizedBox();
   }
 
   // ================= SUBMIT =================
-  void submit() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int userId = prefs.getInt('user_id') ?? 0;
-
-    if (answers.length < questions.length) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Harap isi semua pertanyaan")));
-      return;
-    }
-
-    List payload = [];
-
-    answers.forEach((key, value) {
-      payload.add({
-        "question_id": key,
-        "answer": value is List ? jsonEncode(value) : value.toString(),
-      });
-    });
-
-    print("=== DEBUG KIRIM ===");
-    print("USER ID: $userId");
-    print("PAYLOAD: $payload");
-
+  Future<void> submit() async {
     try {
-      var res = await ApiService.submitAnswers(userId, payload);
+      List payload = [];
 
-      print("RESPONSE: $res");
+      answers.forEach((k, v) {
+        payload.add({
+          "question_id": k,
+          "answer": v is List ? jsonEncode(v) : v.toString(),
+        });
+      });
 
-      if (res['status'] == true) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Jawaban berhasil dikirim")));
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Gagal kirim")));
-      }
-    } catch (e) {
-      print("ERROR: $e");
+      await ApiService.submitAnswers(userId, payload);
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ).showSnackBar(const SnackBar(content: Text("Jawaban berhasil dikirim")));
+    } catch (e) {
+      debugPrint("ERROR SUBMIT: $e");
     }
   }
 
   // ================= UI =================
   @override
-Widget build(BuildContext context) {
-  double progress = questions.isEmpty ? 0 : answers.length / questions.length;
+  Widget build(BuildContext context) {
+    final visibleQuestions = questions.where((q) => shouldShow(q)).toList();
 
-  final bottomPadding = MediaQuery.of(context).padding.bottom + 80;
+    double progress = visibleQuestions.isEmpty
+        ? 0
+        : answers.length / visibleQuestions.length;
 
-  return Scaffold(
-    appBar: AppBar(
-      title: Text("Form Tracer Study"),
-      centerTitle: true,
-    ),
-
-    body: isLoading
-        ? Center(child: CircularProgressIndicator())
-        : SafeArea(
-            child: Column(
+    return Scaffold(
+      appBar: AppBar(title: const Text("Tracer Study"), centerTitle: true),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
               children: [
-                // ================= PROGRESS =================
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Progress Pengisian"),
-                      SizedBox(height: 5),
+                      Text("Progress ${(progress * 100).toInt()}%"),
+                      const SizedBox(height: 6),
                       LinearProgressIndicator(value: progress),
                     ],
                   ),
                 ),
-
-                // ================= LIST =================
                 Expanded(
                   child: ListView.builder(
-                    padding: EdgeInsets.only(bottom: bottomPadding),
-                    itemCount: questions.length,
-                    itemBuilder: (context, i) {
-                      var q = questions[i];
+                    padding: const EdgeInsets.only(bottom: 100),
+                    itemCount: visibleQuestions.length,
+                    itemBuilder: (c, i) {
+                      var q = visibleQuestions[i];
 
                       return Card(
-                        margin: EdgeInsets.symmetric(
+                        margin: const EdgeInsets.symmetric(
                           horizontal: 12,
-                          vertical: 6,
+                          vertical: 8,
                         ),
                         child: Padding(
-                          padding: EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(12),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "${i + 1}. ${q['question_text']}",
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                "${i + 1}. ${q['question_text'] ?? '-'}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
                               buildInput(q),
                             ],
                           ),
@@ -263,27 +262,15 @@ Widget build(BuildContext context) {
                 ),
               ],
             ),
-          ),
-
-    // ================= BUTTON =================
-    bottomNavigationBar: SafeArea(
-      child: Container(
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(
-            top: BorderSide(color: Colors.black12),
-          ),
-        ),
-        child: SizedBox(
-          width: double.infinity,
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
           child: ElevatedButton(
             onPressed: submit,
-            child: Text("Kirim Jawaban"),
+            child: const Text("Kirim Jawaban"),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
