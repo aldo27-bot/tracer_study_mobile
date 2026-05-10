@@ -48,6 +48,8 @@ class _LoginPageState extends State<LoginPage> {
         SharedPreferences prefs =
             await SharedPreferences.getInstance();
 
+            await prefs.setBool('isLogin', true);
+
         prefs.setString('name', data['user']['name']);
         prefs.setInt('user_id', data['user']['user_id']);
 

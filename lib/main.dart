@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/home_page.dart';
 import 'screens/question_page.dart';
@@ -9,6 +10,8 @@ import 'screens/profile_page.dart';
 import 'services/api_service.dart';
 import 'services/notif_service.dart';
 import 'models/alumni_models.dart';
+import 'splash_screen.dart';
+import 'package:projectsemester4/lowongan_pekerjaan/jobs_page.dart';
 
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -37,9 +40,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const MainPage(),
+      home: SplashScreen(),
     );
   }
 }
@@ -53,66 +56,105 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
+  bool isLoading = true;
 
-  late AlumniModel alumni;
+  AlumniModel? alumni;
 
-  final List<Widget> _pages = [];
-
-  final List<String> _labels = ["Home", "Form", "Notifikasi", "Profil"];
+  final List<String> _labels = ["Home", "Form", "Jobs", "Profil"];
 
   @override
   void initState() {
     super.initState();
 
     getToken();
+    getProfile();
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final notification = message.notification;
 
       if (notification != null) {
-        NotifService.show(notification.title ?? '', notification.body ?? '');
+        NotifService.show(
+          notification.title ?? '',
+          notification.body ?? '',
+        );
       }
     });
-
-    // default dummy (biar tidak crash)
-    alumni = AlumniModel(
-      nim: "0",
-      nama: "User",
-      prodi: "",
-      jurusan: "",
-      angkatan: "",
-      tempatLahir: "",
-      tanggalLahir: "",
-      tahunLulus: "",
-      alamat: "",
-    );
-
-    _pages.addAll([
-      const HomePage(),
-      const QuestionPage(),
-      const NotificationPage(),
-      ProfilePage(alumni: alumni),
-    ]);
   }
 
+  // =========================
+  // GET TOKEN FCM
+  // =========================
   Future<void> getToken() async {
     try {
       FirebaseMessaging messaging = FirebaseMessaging.instance;
-
       await messaging.requestPermission();
 
       String? token = await messaging.getToken();
-
       print("FCM TOKEN: $token");
 
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      int? userId = prefs.getInt('user_id');
+
+      if (userId == null) {
+        print("USER BELUM LOGIN");
+        return;
+      }
+
       if (token != null) {
-        await ApiService.sendFcmToken(1, token);
+        await ApiService.sendFcmToken(userId, token);
       }
     } catch (e) {
       print("FCM ERROR: $e");
     }
   }
 
+  // =========================
+  // GET PROFILE (FIXED 100%)
+  // =========================
+  Future<void> getProfile() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      int userId = prefs.getInt('user_id') ?? 1;
+
+      final data = await ApiService.getProfile(userId);
+
+      if (data['status'] == true) {
+        final profile = data['data'];
+
+        setState(() {
+          alumni = AlumniModel(
+            nim: profile['nim']?.toString() ?? '',
+            nama: profile['nama']?.toString() ?? '',
+            email: profile['email']?.toString(),
+            prodi: profile['prodi']?.toString() ?? '',
+            angkatan: profile['angkatan']?.toString() ?? '',
+            tempatLahir: profile['tempat_lahir']?.toString() ?? '',
+            tanggalLahir: profile['tanggal_lahir']?.toString() ?? '',
+            tahunLulus: profile['tahun_lulus']?.toString() ?? '',
+            alamat: profile['alamat']?.toString(),
+          );
+
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          alumni = null;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("PROFILE ERROR: $e");
+
+      setState(() {
+        alumni = null;
+        isLoading = false;
+      });
+    }
+  }
+
+  // =========================
+  // NAV ITEM
+  // =========================
   Widget buildNavItem(IconData icon, int index, String label) {
     bool isActive = _currentIndex == index;
 
@@ -122,12 +164,19 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isActive ? const Color(0xFF0F2D3F) : Colors.grey),
+            Icon(
+              icon,
+              color: isActive
+                  ? const Color(0xFF0F2D3F)
+                  : Colors.grey,
+            ),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isActive ? const Color.fromARGB(255, 236, 112, 4) : Colors.grey,
+                color: isActive
+                    ? const Color.fromARGB(255, 236, 112, 4)
+                    : Colors.grey,
               ),
             ),
           ],
@@ -136,25 +185,60 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+  // =========================
+  // PAGE HANDLER (SAFE)
+  // =========================
+  Widget getPage(int index) {
+    if (alumni == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    switch (index) {
+      case 0:
+        return const HomePage();
+      case 1:
+        return const QuestionPage();
+      case 2:
+        return const JobsPage();
+      case 3:
+        return ProfilePage(alumni: alumni!);
+      default:
+        return const HomePage();
+    }
+  }
+
+  // =========================
+  // BUILD
+  // =========================
   @override
   Widget build(BuildContext context) {
+    if (isLoading && alumni == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: getPage(_currentIndex),
 
       bottomNavigationBar: SafeArea(
         child: Container(
           height: 70,
           decoration: const BoxDecoration(
             color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+            boxShadow: [
+              BoxShadow(color: Colors.black12, blurRadius: 5),
+            ],
           ),
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 8), // kasih jarak kecil
+            padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
                 buildNavItem(Icons.home, 0, _labels[0]),
                 buildNavItem(Icons.assignment, 1, _labels[1]),
-                buildNavItem(Icons.notifications, 2, _labels[2]),
+                buildNavItem(Icons.work_outline, 2, _labels[2]),
                 buildNavItem(Icons.person, 3, _labels[3]),
               ],
             ),

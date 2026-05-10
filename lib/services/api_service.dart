@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../models/lowongan_model.dart';
 
 class ApiService {
   static String baseUrl = "http://172.16.103.150:8000/api";
@@ -237,4 +238,129 @@ class ApiService {
       body: jsonEncode({"user_id": userId, "token": token}),
     );
   }
+
+  // ==============================
+  // profile
+  // ==============================
+  static Future<Map<String, dynamic>> getProfile(int userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/profile?user_id=$userId'),
+      headers: {"Accept": "application/json"},
+    );
+
+    return _handleResponse(response);
+  }
+  // ==============================
+  //edit rofile
+  // ==============================
+
+  static Future updateProfile(
+    String nim,
+    String nama,
+    String prodi,
+    int angkatan,
+    int tahunLulus,
+    String alamat,
+  ) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/update-profile"),
+      body: {
+        "nim": nim,
+        "nama": nama,
+        "prodi": prodi,
+        "angkatan": angkatan.toString(),
+        "tahun_lulus": tahunLulus.toString(),
+        "alamat": alamat,
+      },
+    );
+
+    return json.decode(response.body);
+  }
+
+  // ==============================
+  //get lowongan
+  // ==============================
+  static Future<List<LowonganModel>> getLowongan() async {
+    final response = await http.get(Uri.parse("$baseUrl/lowongan"));
+
+    final data = jsonDecode(response.body);
+
+    if (data['status'] == true) {
+      return (data['data'] as List)
+          .map((item) => LowonganModel.fromJson(item))
+          .toList();
+    }
+
+    return [];
+  }
+
+  // ==============================
+  //add lowongan
+  // ==============================
+  static Future<bool> addLowongan({
+    required String posisi,
+    required String namaPerusahaan,
+    required String lokasi,
+    required String gaji,
+    required String deskripsi,
+    required String batasLamaran,
+    required String kontak,
+    required String linkLamaran,
+    required int dibuatOleh,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/lowongan"),
+
+        headers: {"Accept": "application/json"},
+
+        body: {
+          "posisi": posisi,
+          "nama_perusahaan": namaPerusahaan,
+          "lokasi": lokasi,
+          "gaji": gaji,
+          "deskripsi": deskripsi,
+          "batas_lamaran": batasLamaran,
+          "kontak": kontak,
+          "link_lamaran": linkLamaran,
+          "dibuat_oleh": dibuatOleh.toString(),
+        },
+      );
+
+      print(response.body);
+
+      final data = jsonDecode(response.body);
+
+      return data['status'] == true;
+    } catch (e) {
+      print("ERROR ADD LOWONGAN: $e");
+
+      return false;
+    }
+  }
+
+  // ==============================
+  //statistik alumni
+  // ==============================
+  static Future<Map<String, dynamic>> getStatistikAlumni() async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/statistik-alumni"),
+      headers: {"Accept": "application/json"},
+    );
+
+    return _handleResponse(response);
+  }
+
+
+  // ==============================
+  //get notification_page
+  // ==============================
+  static Future<List> getNotifications(int userId) async {
+  final response = await http.get(
+    Uri.parse("$baseUrl/notifications/$userId"),
+    headers: {"Accept": "application/json"},
+  );
+
+  return jsonDecode(response.body);
+}
 }

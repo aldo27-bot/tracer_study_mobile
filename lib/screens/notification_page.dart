@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/notif_model.dart';
-import '../services/notification_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_service.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -10,7 +10,8 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
-  List<NotifModel> notifications = [];
+  List notifications = [];
+  String? lastSeen;
 
   @override
   void initState() {
@@ -18,12 +19,41 @@ class _NotificationPageState extends State<NotificationPage> {
     loadData();
   }
 
+  Future<void> saveLastSeen() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      'last_seen_notif',
+      DateTime.now().toIso8601String(),
+    );
+  }
+
+  bool isNewNotification(String createdAt) {
+    if (lastSeen == null) return true;
+
+    try {
+      DateTime notifTime = DateTime.parse(createdAt);
+      DateTime seenTime = DateTime.parse(lastSeen!);
+
+      return notifTime.isAfter(seenTime);
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<void> loadData() async {
-    final data = await NotificationStorage.getAll();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int userId = prefs.getInt('user_id') ?? 0;
+
+    lastSeen = prefs.getString('last_seen_notif');
+
+    final data = await ApiService.getNotifications(userId);
 
     setState(() {
       notifications = data;
     });
+
+    // setelah data tampil, update last seen
+    saveLastSeen();
   }
 
   @override
@@ -31,17 +61,6 @@ class _NotificationPageState extends State<NotificationPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Riwayat Notifikasi"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () async {
-              await NotificationStorage.clear();
-              setState(() {
-                notifications.clear();
-              });
-            },
-          )
-        ],
       ),
       body: notifications.isEmpty
           ? const Center(child: Text("Belum ada notifikasi"))
@@ -56,15 +75,38 @@ class _NotificationPageState extends State<NotificationPage> {
                     vertical: 6,
                   ),
                   child: ListTile(
-                    leading: const Icon(Icons.notifications),
-                    title: Text(item.title),
+                    leading: Stack(
+                      children: [
+                        const Icon(Icons.notifications),
+
+                        if (isNewNotification(item['created_at']))
+                          Positioned(
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Text(
+                                "BARU",
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    title: Text(item['title'] ?? ''),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.body),
+                        Text(item['body'] ?? ''),
                         const SizedBox(height: 4),
                         Text(
-                          item.time,
+                          item['created_at'] ?? '',
                           style: const TextStyle(
                             fontSize: 11,
                             color: Colors.grey,

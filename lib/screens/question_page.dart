@@ -284,7 +284,9 @@ class _QuestionPageState extends State<QuestionPage> {
 
               child: const Text(
                 "Kirim Jawaban",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold),
               ),
             ),
           ),
