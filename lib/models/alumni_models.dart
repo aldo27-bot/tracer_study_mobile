@@ -3,10 +3,9 @@ class AlumniModel {
   final String nim;
   final String? email;
   final String prodi;
-  final String jurusan;
   final String angkatan;
-  final String tempatLahir;
-  final String tanggalLahir;
+  final String? tempatLahir;
+  final String? tanggalLahir;
   final String tahunLulus;
   final String? alamat;
 
@@ -15,26 +14,24 @@ class AlumniModel {
     required this.nim,
     this.email,
     required this.prodi,
-    required this.jurusan,
     required this.angkatan,
-    required this.tempatLahir,
-    required this.tanggalLahir,
+    this.tempatLahir,
+    this.tanggalLahir,
     required this.tahunLulus,
     this.alamat,
   });
 
   factory AlumniModel.fromJson(Map<String, dynamic> json) {
     return AlumniModel(
-      nama: json['nama'],
-      nim: json['nim'],
-      email: json['email'],
-      prodi: json['prodi'],
-      jurusan: json['jurusan'],
-      angkatan: json['angkatan'].toString(),
-      tempatLahir: json['tempat_lahir'],
-      tanggalLahir: json['tanggal_lahir'],
-      tahunLulus: json['tahun_lulus'].toString(),
-      alamat: json['alamat'],
+      nama: json['nama']?.toString() ?? '',
+      nim: json['nim']?.toString() ?? '',
+      email: json['email']?.toString(),
+      prodi: json['prodi']?.toString() ?? '',
+      angkatan: json['angkatan']?.toString() ?? '',
+      tempatLahir: json['tempat_lahir']?.toString(),
+      tanggalLahir: json['tanggal_lahir']?.toString(),
+      tahunLulus: json['tahun_lulus']?.toString() ?? '',
+      alamat: json['alamat']?.toString(),
     );
   }
 }

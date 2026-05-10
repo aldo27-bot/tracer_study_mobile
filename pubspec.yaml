@@ -40,13 +40,27 @@ dependencies:
 
   shared_preferences: ^2.2.2
 
+  rive: ^0.13.20
+
+  url_launcher: ^6.3.0
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
+  flutter_native_splash: ^2.4.1
   flutter_test:
     sdk: flutter
+
+  flutter_launcher_icons: ^0.13.1
+
+  rename_app: ^1.6.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/graduation_hat.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -72,6 +86,7 @@ flutter:
     - assets/EnterOTP-pana.png
     - assets/Forgotpassword-amico.png  
     - assets/Signup-amico.png
+    - assets/animations/education.riv
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -104,3 +119,14 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
+flutter_native_splash:
+  color: "#FFFFFF"
+
+  image: assets/graduation_hat.png
+
+  android: true
+  ios: true
+
+  android_12:
+    color: "#FFFFFF"
+    image: assets/graduation_hat.png

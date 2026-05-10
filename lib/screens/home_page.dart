@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:projectsemester4/screens/notification_page.dart';
 
+import '../services/api_service.dart';
 import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,7 +15,16 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String name = "";
+
   double progress = 0.65;
+
+  // =========================
+  // statistik realtime
+  // =========================
+  double kerjaPercent = 0;
+  double wirausahaPercent = 0;
+
+  int totalAlumni = 0;
 
   DateTime focusedDay = DateTime.now();
   DateTime selectedDay = DateTime.now();
@@ -21,18 +32,59 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
     getName();
+    loadStatistik();
   }
 
+  // =========================
+  // ambil nama user
+  // =========================
   Future<void> getName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
     setState(() {
       name = prefs.getString('name') ?? "";
     });
   }
 
+  // =========================
+  // statistik alumni realtime
+  // =========================
+  Future<void> loadStatistik() async {
+    try {
+      final res = await ApiService.getStatistikAlumni();
+
+      print("STATISTIK API:");
+      print(res);
+
+      if (res['status'] == true) {
+        final data = res['data'];
+
+        int total = data['total'];
+        int kerja = data['kerja'];
+        int wirausaha = data['wirausaha'];
+
+        setState(() {
+          totalAlumni = total;
+
+          kerjaPercent = total > 0 ? (kerja / total) * 100 : 0;
+
+          wirausahaPercent = total > 0 ? (wirausaha / total) * 100 : 0;
+        });
+      }
+    } catch (e) {
+      print("ERROR STATISTIK:");
+      print(e);
+    }
+  }
+
+  // =========================
+  // logout
+  // =========================
   Future<void> logout(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
     await prefs.clear();
 
     Navigator.pushReplacement(
@@ -45,29 +97,45 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FB),
+
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
+
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+
             children: [
+              // =========================
               // HEADER
+              // =========================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
                 children: [
-                  const SizedBox(), // biar kiri kosong tetap seimbang
+                  const SizedBox(),
 
                   IconButton(
-                    onPressed: () => logout(context),
-                    icon: const Icon(Icons.logout),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationPage(),
+                      ),
+                    ),
+
+                    icon: const Icon(Icons.notifications, color: Colors.orange),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 0),
+              const SizedBox(height: 5),
 
+              // =========================
+              // sapaan
+              // =========================
               Text(
                 "Halo ${name.isNotEmpty ? name : 'Alumni'}",
+
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -76,40 +144,56 @@ class _HomePageState extends State<HomePage> {
 
               const Text(
                 "Dashboard Tracer Study",
+
                 style: TextStyle(color: Colors.grey),
               ),
 
               const SizedBox(height: 20),
 
-              // PROGRESS CARD
+              // =========================
+              // progress card
+              // =========================
               Container(
                 padding: const EdgeInsets.all(16),
+
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F2D3F),
+
                   borderRadius: BorderRadius.circular(20),
                 ),
+
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+
                       children: [
                         const Text(
                           "Tracer Study Progress",
-                          style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+
+                          style: TextStyle(color: Colors.white),
                         ),
+
                         const SizedBox(height: 8),
+
                         const Text(
                           "Lengkapi Data Kamu",
+
                           style: TextStyle(
-                            color:  const Color.fromARGB(255, 236, 112, 4),
+                            color: Color.fromARGB(255, 236, 112, 4),
+
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+
                         const SizedBox(height: 10),
+
                         Text(
                           "${(progress * 100).toInt()}% selesai",
+
                           style: const TextStyle(color: Colors.white),
                         ),
                       ],
@@ -117,19 +201,26 @@ class _HomePageState extends State<HomePage> {
 
                     Stack(
                       alignment: Alignment.center,
+
                       children: [
                         SizedBox(
                           height: 70,
                           width: 70,
+
                           child: CircularProgressIndicator(
                             value: progress,
-                            color:  const Color.fromARGB(255, 236, 112, 4),
+
+                            color: const Color.fromARGB(255, 236, 112, 4),
+
                             backgroundColor: Colors.white24,
+
                             strokeWidth: 6,
                           ),
                         ),
+
                         Text(
                           "${(progress * 100).toInt()}%",
+
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -143,19 +234,90 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 20),
 
-              // CALENDAR
+              // =========================
+              // total alumni
+              // =========================
+              Container(
+                width: double.infinity,
+
+                padding: const EdgeInsets.all(18),
+
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F2D3F),
+
+                  borderRadius: BorderRadius.circular(20),
+                ),
+
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+
+                        shape: BoxShape.circle,
+                      ),
+
+                      child: const Icon(
+                        Icons.groups,
+                        color: Colors.orange,
+                        size: 30,
+                      ),
+                    ),
+
+                    const SizedBox(width: 15),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+
+                      children: [
+                        const Text(
+                          "Total Alumni",
+
+                          style: TextStyle(color: Colors.white70),
+                        ),
+
+                        const SizedBox(height: 5),
+
+                        Text(
+                          "$totalAlumni Alumni",
+
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // =========================
+              // calendar
+              // =========================
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
+
                   borderRadius: BorderRadius.circular(25),
+
                   boxShadow: const [
                     BoxShadow(color: Colors.black12, blurRadius: 10),
                   ],
                 ),
+
                 padding: const EdgeInsets.all(12),
+
                 child: TableCalendar(
                   focusedDay: focusedDay,
+
                   firstDay: DateTime(2020),
+
                   lastDay: DateTime(2030),
 
                   selectedDayPredicate: (day) => isSameDay(selectedDay, day),
@@ -178,13 +340,17 @@ class _HomePageState extends State<HomePage> {
 
                   calendarStyle: const CalendarStyle(
                     todayDecoration: BoxDecoration(
-                      color:  const Color.fromARGB(255, 236, 112, 4),
+                      color: Color.fromARGB(255, 236, 112, 4),
+
                       shape: BoxShape.circle,
                     ),
+
                     selectedDecoration: BoxDecoration(
                       color: Color(0xFF0F2D3F),
+
                       shape: BoxShape.circle,
                     ),
+
                     selectedTextStyle: TextStyle(color: Colors.white),
                   ),
                 ),
@@ -192,8 +358,12 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 20),
 
+              // =========================
+              // statistik alumni
+              // =========================
               const Text(
                 "Statistik Alumni",
+
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
 
@@ -201,11 +371,19 @@ class _HomePageState extends State<HomePage> {
 
               Row(
                 children: [
-                  statCard("Kerja", "75%", Colors.green),
+                  statCard(
+                    "Kerja",
+                    "${kerjaPercent.toStringAsFixed(0)}%",
+                    Colors.green,
+                  ),
+
                   const SizedBox(width: 10),
-                  statCard("Kuliah", "15%", Colors.orange),
-                  const SizedBox(width: 10),
-                  statCard("Wirausaha", "10%", Colors.blue),
+
+                  statCard(
+                    "Wirausaha",
+                    "${wirausahaPercent.toStringAsFixed(0)}%",
+                    Colors.blue,
+                  ),
                 ],
               ),
             ],
@@ -215,25 +393,34 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // =========================
+  // card statistik
+  // =========================
   Widget statCard(String title, String value, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
+
         decoration: BoxDecoration(
           color: Colors.white,
+
           borderRadius: BorderRadius.circular(15),
         ),
+
         child: Column(
           children: [
             Text(
               value,
+
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
             ),
+
             const SizedBox(height: 5),
+
             Text(title),
           ],
         ),
