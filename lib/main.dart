@@ -20,17 +20,32 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  
+  try {
+    print("[MAIN] Initializing Firebase...");
+    await Firebase.initializeApp().timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        print("[MAIN] Firebase init timeout");
+        throw Exception("Firebase initialization timeout");
+      },
+    );
+    print("[MAIN] Firebase initialized");
 
-  await NotifService.init();
+    print("[MAIN] Initializing NotifService...");
+    await NotifService.init();
+    print("[MAIN] NotifService initialized");
 
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  } catch (e) {
+    print("[MAIN ERROR] $e");
+  }
 
   runApp(const MyApp());
 }

@@ -52,6 +52,7 @@ class _LoginPageState extends State<LoginPage> {
 
         prefs.setString('name', data['user']['name']);
         prefs.setInt('user_id', data['user']['user_id']);
+        prefs.setString('auth_token', data['token']);
 
         Navigator.pushReplacement(
           context,

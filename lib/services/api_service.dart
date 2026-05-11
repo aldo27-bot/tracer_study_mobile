@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:async';
-import 'dart:io';
+// import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/lowongan_model.dart';
 
 class ApiService {
-  static String baseUrl = "http://172.16.106.197:8000/api";
+  // static String baseUrl = "http://172.16.103.150:8000/api";
+  static String baseUrl = "http://172.16.106.75:8000/api";
 
   // ==============================
   // HELPER
@@ -182,20 +184,22 @@ class ApiService {
   static Future<Map<String, dynamic>> submitAnswers(
     int userId,
     List answers,
-  ) async {
-    final response = await http
-        .post(
-          Uri.parse("$baseUrl/answers"),
-          headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-          },
-          body: jsonEncode({"user_id": userId, "answers": answers}),
-        )
-        .timeout(const Duration(seconds: 10));
+    ) async {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token') ?? '';
 
-    return _handleResponse(response);
-  }
+      final response = await http.post(
+        Uri.parse("$baseUrl/answers"),
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token", // ← token dikirim di sini
+        },
+        body: jsonEncode({"answers": answers}),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleResponse(response);
+    }
 
   // ==============================
   // UPDATE ALAMAT
