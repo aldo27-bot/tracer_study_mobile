@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:projectsemester4/models/alumni_models.dart';
 import 'package:projectsemester4/services/api_service.dart';
 import 'package:projectsemester4/screens/edit_profile_page.dart';
+import 'package:projectsemester4/screens/login_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final AlumniModel alumni;
@@ -45,10 +46,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => isLoading = true);
 
     try {
-      final data = await ApiService.updateAlamat(
-        widget.alumni.nim,
-        alamatBaru,
-      );
+      final data = await ApiService.updateAlamat(widget.alumni.nim, alamatBaru);
 
       if (data['status'] == true) {
         setState(() {
@@ -66,9 +64,9 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -141,10 +139,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const Text(
                 "Profile",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 20),
@@ -162,8 +157,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       const CircleAvatar(
                         radius: 42,
                         backgroundColor: Color(0xFF0F2D3F),
-                        child: Icon(Icons.person,
-                            color: Colors.white, size: 45),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 45,
+                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -178,10 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       const SizedBox(height: 6),
 
-                      Text(
-                        a.nim,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
+                      Text(a.nim, style: const TextStyle(color: Colors.grey)),
 
                       const SizedBox(height: 10),
 
@@ -193,7 +188,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       const SizedBox(height: 20),
 
-                      // BUTTON EDIT PROFILE 
+                      // BUTTON EDIT PROFILE
                       ElevatedButton.icon(
                         onPressed: () async {
                           final result = await Navigator.push(
@@ -210,8 +205,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             });
                           }
                         },
-                        icon: const Icon(Icons.edit,
-                            color: Color(0xFFFF8A00)),
+                        icon: const Icon(Icons.edit, color: Color(0xFFFF8A00)),
                         label: const Text(
                           "Edit Profile",
                           style: TextStyle(
@@ -241,12 +235,82 @@ class _ProfilePageState extends State<ProfilePage> {
                     buildDataMenuItem(Icons.badge, "NIM", a.nim),
                     buildDataMenuItem(Icons.school, "Prodi", a.prodi),
                     buildDataMenuItem(
-                        Icons.calendar_month, "Angkatan", a.angkatan),
-                    buildDataMenuItem(Icons.workspace_premium,
-                        "Tahun Lulus", a.tahunLulus),
+                      Icons.calendar_month,
+                      "Angkatan",
+                      a.angkatan,
+                    ),
                     buildDataMenuItem(
-                        Icons.location_on, "Alamat", alamatView),
+                      Icons.workspace_premium,
+                      "Tahun Lulus",
+                      a.tahunLulus,
+                    ),
+                    buildDataMenuItem(Icons.location_on, "Alamat", alamatView),
                   ],
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final result = await showDialog<bool>(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text("Logout"),
+                            content: const Text(
+                              "Apakah Anda yakin ingin logout?",
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context, false);
+                                },
+                                child: const Text("Batal"),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context, true);
+                                },
+                                child: const Text(
+                                  "Logout",
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
+                      if (result == true) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                          (route) => false,
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.logout, color: Colors.red),
+                    label: const Text(
+                      "Logout",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF3F5F7),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
                 ),
               ),
 
