@@ -184,23 +184,44 @@ class _QuestionPageState extends State<QuestionPage> {
       List payload = [];
 
       answers.forEach((k, v) {
-        payload.add({
-          "question_id": k,
-          "answer": v is List ? jsonEncode(v) : v.toString(),
-        });
+        if (v is List) {
+          // multiple choice — kirim sebagai option_ids
+          // tapi karena kita simpan label bukan id, kirim sebagai value
+          payload.add({
+            "question_id": k,
+            "option_ids": null,
+            "value": jsonEncode(v),
+          });
+        } else {
+          payload.add({
+            "question_id": k,
+            "option_ids": null,
+            "value": v.toString(),
+          });
+        }
       });
 
-      await ApiService.submitAnswers(userId, payload);
+      final res = await ApiService.submitAnswers(userId, payload);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Jawaban berhasil dikirim")));
+      if (res['status'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Jawaban berhasil dikirim")),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? "Gagal mengirim jawaban")),
+        );
+      }
     } catch (e) {
       debugPrint("ERROR SUBMIT: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Terjadi kesalahan, coba lagi")),
+      );
     }
   }
+
 
   // ================= UI =================
   @override

@@ -22,19 +22,36 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> checkLogin() async {
-    await Future.delayed(const Duration(seconds: 3));
+    try {
+      // Delay untuk animation
+      await Future.delayed(const Duration(seconds: 3));
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+      SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // cek login
-    bool isLogin = prefs.getBool('isLogin') ?? false;
+      // cek login
+      bool isLogin = prefs.getBool('isLogin') ?? false;
+      print("[SPLASH] IS_LOGIN: $isLogin");
 
-    if (isLogin) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainPage()),
-      );
-    } else {
+      if (!mounted) return; // Check jika widget masih ada
+
+      if (isLogin) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainPage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      }
+    } catch (e, stackTrace) {
+      print("[SPLASH ERROR] $e");
+      print(stackTrace);
+      
+      if (!mounted) return;
+      
+      // Navigate ke LoginPage jika ada error
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginPage()),
