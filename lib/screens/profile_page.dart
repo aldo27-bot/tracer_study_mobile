@@ -3,6 +3,8 @@ import 'package:projectsemester4/models/alumni_models.dart';
 import 'package:projectsemester4/services/api_service.dart';
 import 'package:projectsemester4/screens/edit_profile_page.dart';
 import 'package:projectsemester4/screens/login_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 class ProfilePage extends StatefulWidget {
   final AlumniModel alumni;
@@ -287,11 +289,15 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
 
                       if (result == true) {
+                        final prefs = await SharedPreferences.getInstance();
+
+                        await prefs.clear();
+
+                        if (!mounted) return;
+
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginPage(),
-                          ),
+                          MaterialPageRoute(builder: (_) => const LoginPage()),
                           (route) => false,
                         );
                       }
