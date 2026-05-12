@@ -16,6 +16,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final nimController = TextEditingController();
   final emailController = TextEditingController();
+  final no_hpController = TextEditingController();
   final passwordController = TextEditingController();
 
   bool isLoading = false;
@@ -34,10 +35,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
     final nim = nimController.text.trim();
     final email = emailController.text.trim();
+    final no_hp = no_hpController.text.trim();
     final password = passwordController.text.trim();
 
     if (nim.isEmpty ||
         email.isEmpty ||
+        no_hp.isEmpty ||
         password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -62,6 +65,7 @@ class _RegisterPageState extends State<RegisterPage> {
       final data = await ApiService.register(
         nim,
         email,
+        no_hp,
         password,
       );
 
@@ -124,6 +128,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     nimController.dispose();
     emailController.dispose();
+    no_hpController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -350,6 +355,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                 emailController,
                             hint: "Email",
                             icon: Icons.email_outlined,
+                          ),
+
+                          // NOMOR HANDPHONE
+                          buildInputField(
+                            controller:
+                                no_hpController,
+                            hint: "Nomor Handphone",
+                            icon: Icons.phone_outlined,
                           ),
 
                           // PASSWORD

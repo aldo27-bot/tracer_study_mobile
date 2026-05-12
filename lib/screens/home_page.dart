@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:projectsemester4/screens/notification_page.dart';
+import 'package:projectsemester4/screens/question_page.dart';
+import 'dart:convert';
 
 import '../services/api_service.dart';
 import 'login_page.dart';
@@ -16,7 +18,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String name = "";
 
-  double progress = 0.65;
+  double progress = 0;
 
   // =========================
   // statistik realtime
@@ -35,7 +37,19 @@ class _HomePageState extends State<HomePage> {
 
     getName();
     loadStatistik();
+    loadProgress();
   }
+
+  // =========================
+  // load progress isian tracer study
+  // =========================
+  Future<void> loadProgress() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  setState(() {
+    progress = prefs.getDouble("progress") ?? 0;
+  });
+}
 
   // =========================
   // ambil nama user
@@ -77,20 +91,6 @@ class _HomePageState extends State<HomePage> {
       print("ERROR STATISTIK:");
       print(e);
     }
-  }
-
-  // =========================
-  // logout
-  // =========================
-  Future<void> logout(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    await prefs.clear();
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-    );
   }
 
   @override
@@ -145,94 +145,10 @@ class _HomePageState extends State<HomePage> {
               const Text(
                 "Dashboard Tracer Study",
 
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.orange),
               ),
 
-              const SizedBox(height: 20),
-
-              // =========================
-              // progress card
-              // =========================
-              Container(
-                padding: const EdgeInsets.all(16),
-
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F2D3F),
-
-                  borderRadius: BorderRadius.circular(20),
-                ),
-
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-
-                      children: [
-                        const Text(
-                          "Tracer Study Progress",
-
-                          style: TextStyle(color: Colors.white),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        const Text(
-                          "Lengkapi Data Kamu",
-
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 236, 112, 4),
-
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        Text(
-                          "${(progress * 100).toInt()}% selesai",
-
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
-
-                    Stack(
-                      alignment: Alignment.center,
-
-                      children: [
-                        SizedBox(
-                          height: 70,
-                          width: 70,
-
-                          child: CircularProgressIndicator(
-                            value: progress,
-
-                            color: const Color.fromARGB(255, 236, 112, 4),
-
-                            backgroundColor: Colors.white24,
-
-                            strokeWidth: 6,
-                          ),
-                        ),
-
-                        Text(
-                          "${(progress * 100).toInt()}%",
-
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
 
               // =========================
               // total alumni
@@ -295,7 +211,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
 
               // =========================
               // calendar

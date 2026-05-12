@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 
@@ -15,6 +16,7 @@ class _QuestionPageState extends State<QuestionPage> {
   Map<Object, dynamic> answers = {};
   bool isLoading = true;
   int userId = 0;
+  String get draftKey => "draft_answers_$userId";
 
   @override
   void initState() {
@@ -36,11 +38,53 @@ class _QuestionPageState extends State<QuestionPage> {
           questions = List<Map<String, dynamic>>.from(qList);
           isLoading = false;
         });
+        await loadDraft();
       }
     } catch (e) {
       debugPrint("ERROR LOAD DATA: $e");
       if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  // ================= Simpan sementara =================
+  Future<void> simpanSementara() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    Map<String, dynamic> data = {
+      "answers": answers.map((key, value) {
+        return MapEntry(key.toString(), value);
+      }),
+      "saved_at": DateTime.now().toIso8601String(),
+    };
+
+    await prefs.setString(draftKey, jsonEncode(data));
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Jawaban berhasil disimpan sementara"),
+        backgroundColor: Colors.blue,
+      ),
+    );
+  }
+
+  // ================= Load data yang disimpan =================
+  Future<void> loadDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final raw = prefs.getString(draftKey);
+    if (raw == null) return;
+
+    final data = jsonDecode(raw);
+
+    final savedAnswers = data["answers"] as Map<String, dynamic>;
+
+    setState(() {
+      answers = savedAnswers.map((key, value) {
+        return MapEntry(int.tryParse(key) ?? key, value);
+      });
+    });
   }
 
   // ================= HELPER: ambil jawaban berdasarkan kode_soal =================
@@ -62,8 +106,19 @@ class _QuestionPageState extends State<QuestionPage> {
     final status = _getAnswerByKode('f8');
 
     // Hanya tampil jika pilih "Bekerja"
-    if (['f502', 'f505', 'f5a1', 'f5a2', 'f1101', 'f1102',
-         'f5b', 'f5d', 'f6', 'f7', 'f7a'].contains(kode)) {
+    if ([
+      'f502',
+      'f505',
+      'f5a1',
+      'f5a2',
+      'f1101',
+      'f1102',
+      'f5b',
+      'f5d',
+      'f6',
+      'f7',
+      'f7a',
+    ].contains(kode)) {
       return status.contains('Bekerja');
     }
 
@@ -117,13 +172,12 @@ class _QuestionPageState extends State<QuestionPage> {
 
   // ================= DECORATION =================
   InputDecoration _dec(String h) => InputDecoration(
-        hintText: h,
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      );
+    hintText: h,
+    filled: true,
+    fillColor: Colors.grey.shade100,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+  );
 
   // ================= INPUT =================
   Widget buildInput(Map<String, dynamic> q) {
@@ -237,7 +291,7 @@ class _QuestionPageState extends State<QuestionPage> {
         'Rendah',
         'Sedang',
         'Tinggi',
-        'Sangat\nTinggi'
+        'Sangat\nTinggi',
       ];
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -287,33 +341,44 @@ class _QuestionPageState extends State<QuestionPage> {
           Row(
             children: [
               const Expanded(flex: 3, child: SizedBox()),
-              ...['1', '2', '3', '4', '5'].map((s) => Expanded(
-                    flex: 1,
-                    child: Center(
-                      child: Text(s,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 12)),
+              ...['1', '2', '3', '4', '5'].map(
+                (s) => Expanded(
+                  flex: 1,
+                  child: Center(
+                    child: Text(
+                      s,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
-                  )),
+                  ),
+                ),
+              ),
             ],
           ),
           Row(
             children: [
-              const Expanded(
-                flex: 3,
-                child: SizedBox(),
-              ),
+              const Expanded(flex: 3, child: SizedBox()),
               Expanded(
                 flex: 5,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Sangat\nRendah',
-                        style: TextStyle(
-                            fontSize: 8, color: Colors.grey.shade600)),
-                    Text('Sangat\nTinggi',
-                        style: TextStyle(
-                            fontSize: 8, color: Colors.grey.shade600)),
+                    Text(
+                      'Sangat\nRendah',
+                      style: TextStyle(
+                        fontSize: 8,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    Text(
+                      'Sangat\nTinggi',
+                      style: TextStyle(
+                        fontSize: 8,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -332,8 +397,7 @@ class _QuestionPageState extends State<QuestionPage> {
                 children: [
                   Expanded(
                     flex: 3,
-                    child: Text(label,
-                        style: const TextStyle(fontSize: 12)),
+                    child: Text(label, style: const TextStyle(fontSize: 12)),
                   ),
                   ...List.generate(5, (i) {
                     final val = (i + 1).toString();
@@ -341,8 +405,7 @@ class _QuestionPageState extends State<QuestionPage> {
                     return Expanded(
                       flex: 1,
                       child: GestureDetector(
-                        onTap: () =>
-                            setState(() => answers[mapKey] = val),
+                        onTap: () => setState(() => answers[mapKey] = val),
                         child: Center(
                           child: CircleAvatar(
                             radius: 14,
@@ -352,9 +415,7 @@ class _QuestionPageState extends State<QuestionPage> {
                             child: Text(
                               val,
                               style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.black,
+                                color: isSelected ? Colors.white : Colors.black,
                                 fontSize: 11,
                               ),
                             ),
@@ -378,8 +439,20 @@ class _QuestionPageState extends State<QuestionPage> {
   void _resetConditionalAnswers() {
     // Kode soal yang kondisional — hapus jawabannya saat status berubah
     final conditionalKodes = [
-      'f502', 'f503', 'f505', 'f5a1', 'f5a2', 'f1101', 'f1102',
-      'f5b', 'f5c', 'f5d', 'f18a', 'f18b', 'f18c', 'f18d',
+      'f502',
+      'f503',
+      'f505',
+      'f5a1',
+      'f5a2',
+      'f1101',
+      'f1102',
+      'f5b',
+      'f5c',
+      'f5d',
+      'f18a',
+      'f18b',
+      'f18c',
+      'f18d',
     ];
     for (final kode in conditionalKodes) {
       final q = questions.firstWhere(
@@ -454,8 +527,7 @@ class _QuestionPageState extends State<QuestionPage> {
   // ================= UI =================
   @override
   Widget build(BuildContext context) {
-    final visibleQuestions =
-        questions.where((q) => shouldShow(q)).toList();
+    final visibleQuestions = questions.where((q) => shouldShow(q)).toList();
 
     // Hitung progress hanya dari pertanyaan yang visible dan non-matrix
     int answered = 0;
@@ -463,14 +535,17 @@ class _QuestionPageState extends State<QuestionPage> {
       final id = int.tryParse(q['id'].toString()) ?? 0;
       if (answers.containsKey(id) && answers[id] != null) answered++;
     }
-    double progress =
-        visibleQuestions.isEmpty ? 0 : answered / visibleQuestions.length;
+    double progress = visibleQuestions.isEmpty
+        ? 0
+        : answered / visibleQuestions.length;
+
+    // SIMPAN KE SHARED PREFS
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setDouble("progress_$userId", progress);
+    });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tracer Study'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Tracer Study'), centerTitle: true),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -491,7 +566,9 @@ class _QuestionPageState extends State<QuestionPage> {
                           Text(
                             '$answered / ${visibleQuestions.length} pertanyaan',
                             style: TextStyle(
-                                fontSize: 12, color: Colors.grey.shade600),
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ],
                       ),
@@ -503,7 +580,8 @@ class _QuestionPageState extends State<QuestionPage> {
                           minHeight: 8,
                           backgroundColor: Colors.grey.shade200,
                           valueColor: const AlwaysStoppedAnimation<Color>(
-                              Color(0xFF0F2D3F)),
+                            Color(0xFF0F2D3F),
+                          ),
                         ),
                       ),
                     ],
@@ -520,10 +598,13 @@ class _QuestionPageState extends State<QuestionPage> {
 
                       return Card(
                         margin: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         elevation: 1,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(14),
                           child: Column(
@@ -533,28 +614,34 @@ class _QuestionPageState extends State<QuestionPage> {
                               Text(
                                 '${i + 1}. ${q['question_text'] ?? '-'}',
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                               // Hint / keterangan
                               if (hint.isNotEmpty) ...[
                                 const SizedBox(height: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 7),
+                                    horizontal: 10,
+                                    vertical: 7,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.blue.shade50,
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
-                                        color: Colors.blue.shade100),
+                                      color: Colors.blue.shade100,
+                                    ),
                                   ),
                                   child: Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Icon(Icons.info_outline,
-                                          size: 14,
-                                          color: Colors.blue.shade600),
+                                      Icon(
+                                        Icons.info_outline,
+                                        size: 14,
+                                        color: Colors.blue.shade600,
+                                      ),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
@@ -584,23 +671,54 @@ class _QuestionPageState extends State<QuestionPage> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: SizedBox(
-            height: 52,
-            child: ElevatedButton(
-              onPressed: submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F2D3F),
-                foregroundColor: const Color.fromARGB(255, 236, 112, 4),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+          child: Row(
+            children: [
+              // Tombol Simpan Sementara
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: simpanSementara,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F2D3F),
+                      foregroundColor: const Color.fromARGB(255, 236, 112, 4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text("Simpan", textAlign: TextAlign.center),
+                  ),
+                ),
               ),
-              child: const Text(
-                'Kirim Jawaban',
-                style:
-                    TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+
+              const SizedBox(width: 12),
+
+              // Tombol Kirim
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F2D3F),
+                      foregroundColor: const Color.fromARGB(255, 236, 112, 4),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Kirim',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

@@ -24,9 +24,22 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
   bool obscurePassword = true;
 
+  // =========================
+  // SAFE PARSER
+  // =========================
+  String safeString(dynamic value) {
+    return value?.toString() ?? '';
+  }
+
+  int safeInt(dynamic value) {
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  // =========================
+  // LOGIN
+  // =========================
   Future<void> login() async {
-    if (emailController.text.isEmpty ||
-        passwordController.text.isEmpty) {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Email dan password tidak boleh kosong"),
@@ -44,15 +57,19 @@ class _LoginPageState extends State<LoginPage> {
         passwordController.text.trim(),
       );
 
+      print("LOGIN RESPONSE: $data");
+
       if (data['status'] == true) {
-        SharedPreferences prefs =
-            await SharedPreferences.getInstance();
+        final prefs = await SharedPreferences.getInstance();
 
-            await prefs.setBool('isLogin', true);
+        final user = data['user'] ?? {};
 
-        prefs.setString('name', data['user']['name']);
-        prefs.setInt('user_id', data['user']['user_id']);
-        prefs.setString('auth_token', data['token']);
+        await prefs.setBool('isLogin', true);
+        await prefs.setString('name', safeString(user['name']));
+        await prefs.setInt('user_id', safeInt(user['user_id']));
+        await prefs.setString('auth_token', safeString(data['token']));
+
+        if (!mounted) return;
 
         Navigator.pushReplacement(
           context,
@@ -79,20 +96,18 @@ class _LoginPageState extends State<LoginPage> {
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'])),
+          SnackBar(
+            content: Text(data['message'] ?? "Login gagal"),
+          ),
         );
       }
     } on TimeoutException {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Server terlalu lama merespon"),
-        ),
+        const SnackBar(content: Text("Server terlalu lama merespon")),
       );
     } on SocketException {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Tidak bisa terhubung ke server"),
-        ),
+        const SnackBar(content: Text("Tidak bisa terhubung ke server")),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,6 +118,9 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = false);
   }
 
+  // =========================
+  // UI INPUT (TIDAK DIUBAH)
+  // =========================
   Widget buildInputField({
     required TextEditingController controller,
     required String hint,
@@ -121,12 +139,7 @@ class _LoginPageState extends State<LoginPage> {
         decoration: InputDecoration(
           hintText: hint,
           border: InputBorder.none,
-
-          prefixIcon: Icon(
-            icon,
-            color: Colors.grey,
-          ),
-
+          prefixIcon: Icon(icon, color: Colors.grey),
           suffixIcon: isPassword
               ? IconButton(
                   onPressed: () {
@@ -142,10 +155,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 )
               : null,
-
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );
@@ -163,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.only(bottom: 30),
             child: Column(
               children: [
-                // TOP SHAPE
+                // TOP SHAPE (TIDAK DIUBAH)
                 Stack(
                   children: [
                     Container(
@@ -176,7 +186,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-
                     Positioned(
                       top: 35,
                       left: 20,
@@ -189,7 +198,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-
                     Positioned(
                       top: 45,
                       right: 20,
@@ -202,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
 
-                // LOGIN CARD
+                // LOGIN CARD (TIDAK DIUBAH)
                 Transform.translate(
                   offset: const Offset(0, -40),
                   child: Padding(
@@ -220,10 +228,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
-
                       child: Column(
                         children: [
-                          // IMAGE
                           Container(
                             height: 120,
                             width: double.infinity,
@@ -231,7 +237,6 @@ class _LoginPageState extends State<LoginPage> {
                               borderRadius: BorderRadius.circular(22),
                               color: const Color(0xFFF5F5F5),
                             ),
-
                             child: Padding(
                               padding: const EdgeInsets.all(12),
                               child: Image.asset(
@@ -243,7 +248,6 @@ class _LoginPageState extends State<LoginPage> {
 
                           const SizedBox(height: 18),
 
-                          // TITLE
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
@@ -271,14 +275,12 @@ class _LoginPageState extends State<LoginPage> {
 
                           const SizedBox(height: 18),
 
-                          // EMAIL
                           buildInputField(
                             controller: emailController,
                             hint: "Email",
                             icon: Icons.person_outline,
                           ),
 
-                          // PASSWORD
                           buildInputField(
                             controller: passwordController,
                             hint: "Password",
@@ -294,8 +296,7 @@ class _LoginPageState extends State<LoginPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => LupaPasswordPage(
-                                      email:
-                                          emailController.text.trim(),
+                                      email: emailController.text.trim(),
                                     ),
                                   ),
                                 );
@@ -313,24 +314,18 @@ class _LoginPageState extends State<LoginPage> {
 
                           const SizedBox(height: 12),
 
-                          // LOGIN BUTTON
                           SizedBox(
                             width: double.infinity,
                             height: 54,
                             child: ElevatedButton(
-                              onPressed:
-                                  isLoading ? null : login,
-
+                              onPressed: isLoading ? null : login,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color(0xFF0F2D3F),
+                                backgroundColor: const Color(0xFF0F2D3F),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(18),
+                                  borderRadius: BorderRadius.circular(18),
                                 ),
                               ),
-
                               child: isLoading
                                   ? const CircularProgressIndicator(
                                       color: Colors.white,
@@ -340,8 +335,7 @@ class _LoginPageState extends State<LoginPage> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: Colors.white,
-                                        fontWeight:
-                                            FontWeight.bold,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                             ),
@@ -349,10 +343,8 @@ class _LoginPageState extends State<LoginPage> {
 
                           const SizedBox(height: 20),
 
-                          // REGISTER
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
                                 "Don't have account? ",
@@ -361,14 +353,12 @@ class _LoginPageState extends State<LoginPage> {
                                   fontSize: 13,
                                 ),
                               ),
-
                               GestureDetector(
                                 onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          const RegisterPage(),
+                                      builder: (_) => const RegisterPage(),
                                     ),
                                   );
                                 },

@@ -7,7 +7,7 @@ import '../models/lowongan_model.dart';
 
 class ApiService {
   // static String baseUrl = "http://172.16.103.150:8000/api";
-  static String baseUrl = "http://172.16.106.75:8000/api";
+  static String baseUrl = "http://172.16.115.186:8000/api";
 
   // ==============================
   // HELPER
@@ -54,13 +54,18 @@ class ApiService {
   static Future<Map<String, dynamic>> register(
     String nim,
     String email,
+    String no_telp,
     String password,
   ) async {
     final response = await http
         .post(
           Uri.parse("$baseUrl/register"),
           headers: {"Accept": "application/json"},
-          body: {"nim": nim, "email": email, "password": password},
+          body: {
+            "nim": nim,
+            "email": email,
+            "no_telp": no_telp,
+            "password": password},
         )
         .timeout(const Duration(seconds: 10));
 
