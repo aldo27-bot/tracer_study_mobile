@@ -4,12 +4,14 @@ import 'package:projectsemester4/services/api_service.dart';
 import 'package:projectsemester4/screens/edit_profile_page.dart';
 import 'package:projectsemester4/screens/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:projectsemester4/screens/lupa_password.dart';
 import 'dart:async';
 
 class ProfilePage extends StatefulWidget {
   final AlumniModel alumni;
+  final Function(AlumniModel updated)? onProfileUpdate;
 
-  const ProfilePage({super.key, required this.alumni});
+  const ProfilePage({super.key, required this.alumni, this.onProfileUpdate});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -204,21 +206,24 @@ class _ProfilePageState extends State<ProfilePage> {
                           );
 
                           if (result != null) {
-                            setState(() {
-                              alumniData = AlumniModel(
-                                nama: result["nama"],
-                                nim: alumniData.nim,
-                                prodi: result["prodi"],
-                                angkatan: result["angkatan"].toString(),
-                                tahunLulus: result["tahunLulus"].toString(),
-                                alamat: result["alamat"],
-                                email: alumniData.email,
-                                tempatLahir: alumniData.tempatLahir,
-                                tanggalLahir: alumniData.tanggalLahir,
-                              );
+                            final updated = AlumniModel(
+                              nama: result["nama"],
+                              nim: alumniData.nim,
+                              prodi: result["prodi"],
+                              angkatan: result["angkatan"].toString(),
+                              tahunLulus: result["tahunLulus"].toString(),
+                              alamat: result["alamat"],
+                              email: alumniData.email,
+                              tempatLahir: alumniData.tempatLahir,
+                              tanggalLahir: alumniData.tanggalLahir,
+                            );
 
+                            setState(() {
+                              alumniData = updated;
                               alamatView = result["alamat"];
                             });
+
+                            widget.onProfileUpdate?.call(updated);
                           }
                         },
                         icon: const Icon(Icons.edit, color: Color(0xFFFF8A00)),
@@ -233,6 +238,41 @@ class _ProfilePageState extends State<ProfilePage> {
                           backgroundColor: const Color(0xFF0F2D3F),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // BUTTON LUPA PASSWORD
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    LupaPasswordPage(email: a.email ?? ""),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.lock_reset,
+                            color: Color(0xFF0F2D3F),
+                          ),
+                          label: const Text(
+                            "Lupa Password",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F2D3F),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF0F2D3F)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
                         ),
                       ),

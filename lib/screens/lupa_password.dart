@@ -288,7 +288,7 @@ class _LupaPasswordPageState
                                 MainAxisAlignment.center,
                             children: [
                               const Text(
-                                "Back to ",
+                                "kembali ke ",
                                 style: TextStyle(
                                   color: Colors.grey,
                                   fontSize: 13,
@@ -300,7 +300,7 @@ class _LupaPasswordPageState
                                   Navigator.pop(context);
                                 },
                                 child: const Text(
-                                  "Login",
+                                  "halaman sebelumnya",
                                   style: TextStyle(
                                     color: Color(0xFF0F2D3F),
                                     fontWeight:

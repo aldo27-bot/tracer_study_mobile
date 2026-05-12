@@ -256,7 +256,7 @@ class _MainPageState extends State<MainPage> {
   // PAGE HANDLER (SAFE)
   // =========================
   Widget getPage(int index) {
-    if (isLoading) {
+    if (isLoading || alumni == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
@@ -268,7 +268,14 @@ class _MainPageState extends State<MainPage> {
       case 2:
         return const JobsPage();
       case 3:
-        return ProfilePage(alumni: alumni!);
+        return ProfilePage(
+          alumni: alumni!,
+          onProfileUpdate: (updated) {
+            setState(() {
+              alumni = updated;
+            });
+          },
+        );
       default:
         return const HomePage();
     }

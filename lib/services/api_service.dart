@@ -7,7 +7,7 @@ import '../models/lowongan_model.dart';
 
 class ApiService {
   // static String baseUrl = "http://172.16.103.150:8000/api";
-  static String baseUrl = "http://172.16.106.75:8000/api";
+  static String baseUrl = "http://172.16.115.186:8000/api";
 
   // ==============================
   // HELPER
