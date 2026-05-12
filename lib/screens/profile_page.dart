@@ -16,6 +16,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  late AlumniModel alumniData;
   late TextEditingController _alamatController;
 
   bool isLoading = false;
@@ -24,6 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    alumniData = widget.alumni;
     alamatView = widget.alumni.alamat ?? "";
 
     _alamatController = TextEditingController(text: alamatView);
@@ -129,7 +131,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final a = widget.alumni;
+    final a = alumniData;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
@@ -203,7 +205,19 @@ class _ProfilePageState extends State<ProfilePage> {
 
                           if (result != null) {
                             setState(() {
-                              alamatView = result;
+                              alumniData = AlumniModel(
+                                nama: result["nama"],
+                                nim: alumniData.nim,
+                                prodi: result["prodi"],
+                                angkatan: result["angkatan"].toString(),
+                                tahunLulus: result["tahunLulus"].toString(),
+                                alamat: result["alamat"],
+                                email: alumniData.email,
+                                tempatLahir: alumniData.tempatLahir,
+                                tanggalLahir: alumniData.tanggalLahir,
+                              );
+
+                              alamatView = result["alamat"];
                             });
                           }
                         },
