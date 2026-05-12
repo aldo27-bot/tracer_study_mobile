@@ -27,8 +27,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     namaC = TextEditingController(text: widget.alumni.nama);
     prodiC = TextEditingController(text: widget.alumni.prodi);
     angkatanC = TextEditingController(text: widget.alumni.angkatan.toString());
-    tahunLulusC =
-        TextEditingController(text: widget.alumni.tahunLulus.toString());
+    tahunLulusC = TextEditingController(
+      text: widget.alumni.tahunLulus.toString(),
+    );
     alamatC = TextEditingController(text: widget.alumni.alamat ?? "");
   }
 
@@ -48,9 +49,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
         angkatanC.text.isEmpty ||
         tahunLulusC.text.isEmpty ||
         alamatC.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Semua data wajib diisi")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Semua data wajib diisi")));
       return;
     }
 
@@ -68,7 +69,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (res['status'] == true) {
         if (mounted) {
-          Navigator.pop(context, true);
+          Navigator.pop(context, {
+            "nama": namaC.text,
+            "prodi": prodiC.text,
+            "angkatan": angkatanC.text,
+            "tahunLulus": tahunLulusC.text,
+            "alamat": alamatC.text,
+          });
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -76,16 +83,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
-  Widget buildInput(String label, TextEditingController c, IconData icon,
-      {bool number = false}) {
+  Widget buildInput(
+    String label,
+    TextEditingController c,
+    IconData icon, {
+    bool number = false,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
@@ -97,7 +108,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: TextField(
@@ -126,11 +137,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
           children: [
             buildInput("Nama", namaC, Icons.person),
             buildInput("Prodi", prodiC, Icons.school),
-            buildInput("Angkatan", angkatanC, Icons.calendar_month,
-                number: true),
             buildInput(
-                "Tahun Lulus", tahunLulusC, Icons.workspace_premium,
-                number: true),
+              "Angkatan",
+              angkatanC,
+              Icons.calendar_month,
+              number: true,
+            ),
+            buildInput(
+              "Tahun Lulus",
+              tahunLulusC,
+              Icons.workspace_premium,
+              number: true,
+            ),
             buildInput("Alamat", alamatC, Icons.location_on),
 
             const SizedBox(height: 20),
@@ -156,7 +174,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                       ),
               ),
-            )
+            ),
           ],
         ),
       ),

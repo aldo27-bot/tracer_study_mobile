@@ -4,6 +4,9 @@
 *.pyc
 *.swp
 .DS_Store
+linux/
+macos/
+windows/
 .atom/
 .build/
 .buildlog/
