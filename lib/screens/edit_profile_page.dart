@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:projectsemester4/models/alumni_models.dart';
 import 'package:projectsemester4/services/api_service.dart';
 
@@ -19,6 +20,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController alamatC;
 
   bool isLoading = false;
+
+  // =========================
+  // VALIDATION REGEX
+  // =========================
+  final RegExp nameRegex = RegExp(r"^[a-zA-Z\s]+$");
+  final RegExp numberRegex = RegExp(r"^[0-9]+$");
+  final RegExp addressRegex = RegExp(r"^[a-zA-Z0-9\s,.\-/]+$");
 
   @override
   void initState() {
@@ -43,15 +51,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
+  // =========================
+  // SAVE PROFILE + VALIDATION
+  // =========================
   Future<void> saveProfile() async {
     if (namaC.text.isEmpty ||
         prodiC.text.isEmpty ||
         angkatanC.text.isEmpty ||
         tahunLulusC.text.isEmpty ||
         alamatC.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Semua data wajib diisi")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Semua data wajib diisi")),
+      );
+      return;
+    }
+
+    // VALIDASI FORMAT
+    if (!nameRegex.hasMatch(namaC.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nama hanya boleh huruf")),
+      );
+      return;
+    }
+
+    if (!nameRegex.hasMatch(prodiC.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Prodi hanya boleh huruf")),
+      );
+      return;
+    }
+
+    if (!numberRegex.hasMatch(angkatanC.text) ||
+        !numberRegex.hasMatch(tahunLulusC.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Angkatan & Tahun Lulus harus angka")),
+      );
+      return;
+    }
+
+    if (!addressRegex.hasMatch(alamatC.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Alamat mengandung karakter tidak valid")),
+      );
       return;
     }
 
@@ -83,19 +124,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
+  // =========================
+  // INPUT WIDGET (FILTER EMOJI)
+  // =========================
   Widget buildInput(
     String label,
     TextEditingController c,
     IconData icon, {
     bool number = false,
+    bool isAddress = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -113,7 +158,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
       child: TextField(
         controller: c,
-        keyboardType: number ? TextInputType.number : TextInputType.text,
+        keyboardType:
+            number ? TextInputType.number : TextInputType.text,
+
+        // =========================
+        // INPUT FORMATTER (ANTI EMOJI)
+        // =========================
+        inputFormatters: [
+          if (number)
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))
+          else if (isAddress)
+            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s,.\-/]'))
+          else
+            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+        ],
+
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: const Color(0xFF0F2D3F)),
           labelText: label,
@@ -129,7 +188,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
         title: const Text("Edit Profile"),
-        // backgroundColor: const Color(0xFF0F2D3F),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -149,7 +207,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
               Icons.workspace_premium,
               number: true,
             ),
-            buildInput("Alamat", alamatC, Icons.location_on),
+            buildInput(
+              "Alamat",
+              alamatC,
+              Icons.location_on,
+              isAddress: true,
+            ),
 
             const SizedBox(height: 20),
 
