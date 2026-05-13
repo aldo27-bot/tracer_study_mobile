@@ -8,11 +8,8 @@ class OtpPage extends StatefulWidget {
   final String email;
   final String type; // register / forgot / login
 
-  const OtpPage({
-    Key? key,
-    required this.email,
-    required this.type,
-  }) : super(key: key);
+  const OtpPage({Key? key, required this.email, required this.type})
+    : super(key: key);
 
   @override
   State<OtpPage> createState() => _OtpPageState();
@@ -21,19 +18,18 @@ class OtpPage extends StatefulWidget {
 class _OtpPageState extends State<OtpPage> {
   final otpController = TextEditingController();
 
-  bool isLoading = false;
+ bool isVerifying = false;
+ bool isResending = false;
 
   Future<void> verifyOtp() async {
     if (otpController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Masukkan OTP"),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Masukkan OTP")));
       return;
     }
 
-    setState(() => isLoading = true);
+    setState(() => isVerifying = true);
 
     try {
       final data = await ApiService.verifyOtp(
@@ -43,63 +39,75 @@ class _OtpPageState extends State<OtpPage> {
       );
 
       if (data['status'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Verifikasi berhasil"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Verifikasi berhasil")));
 
         // REGISTER
         if (widget.type == 'register') {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-              builder: (_) => const LoginPage(),
-            ),
+            MaterialPageRoute(builder: (_) => const LoginPage()),
             (route) => false,
           );
         }
-
         // FORGOT PASSWORD
         else if (widget.type == 'forgot') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  ResetPasswordPage(
-                    email: widget.email,
-                  ),
+              builder: (_) => ResetPasswordPage(email: widget.email),
             ),
           );
         }
-
         // LOGIN OTP
         else if (widget.type == 'login') {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-              builder: (_) => const LoginPage(),
-            ),
+            MaterialPageRoute(builder: (_) => const LoginPage()),
             (route) => false,
           );
         }
       } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(data['message'] ?? "OTP salah")));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Terjadi kesalahan")));
+    } finally {
+      setState(() => isVerifying = false);
+    }
+  }
+
+  Future<void> resendOtp() async {
+    setState(() => isResending = true);
+
+    try {
+      final data = await ApiService.resendOtp(
+        widget.email,
+        widget.type,
+        );
+
+      if (data['status'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("OTP berhasil dikirim ulang")),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              data['message'] ?? "OTP salah",
-            ),
+            content: Text(data['message'] ?? "Gagal mengirim ulang OTP"),
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Terjadi kesalahan"),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
-      setState(() => isLoading = false);
+      setState(() => isResending = false);
     }
   }
 
@@ -118,9 +126,7 @@ class _OtpPageState extends State<OtpPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.only(
-              bottom: 30,
-            ),
+            padding: const EdgeInsets.only(bottom: 30),
             child: Column(
               children: [
                 // TOP SHAPE
@@ -130,12 +136,9 @@ class _OtpPageState extends State<OtpPage> {
                       height: 220,
                       decoration: const BoxDecoration(
                         color: Color(0xFF0F2D3F),
-                        borderRadius:
-                            BorderRadius.only(
-                          bottomLeft:
-                              Radius.circular(120),
-                          bottomRight:
-                              Radius.circular(120),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(120),
+                          bottomRight: Radius.circular(120),
                         ),
                       ),
                     ),
@@ -146,8 +149,7 @@ class _OtpPageState extends State<OtpPage> {
                       child: Container(
                         width: 40,
                         height: 40,
-                        decoration:
-                            const BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Color(0xFF5D7B93),
                           shape: BoxShape.circle,
                         ),
@@ -160,8 +162,7 @@ class _OtpPageState extends State<OtpPage> {
                       child: Icon(
                         Icons.verified_user,
                         size: 90,
-                        color: Colors.white
-                            .withOpacity(0.15),
+                        color: Colors.white.withOpacity(0.15),
                       ),
                     ),
 
@@ -173,10 +174,7 @@ class _OtpPageState extends State<OtpPage> {
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                        ),
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
                       ),
                     ),
                   ],
@@ -186,21 +184,15 @@ class _OtpPageState extends State<OtpPage> {
                 Transform.translate(
                   offset: const Offset(0, -40),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 24,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Container(
-                      padding:
-                          const EdgeInsets.all(22),
+                      padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black
-                                .withOpacity(0.08),
+                            color: Colors.black.withOpacity(0.08),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -214,17 +206,12 @@ class _OtpPageState extends State<OtpPage> {
                             height: 120,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(
-                                      22),
-                              color:
-                                  const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(22),
+                              color: const Color(0xFFF5F5F5),
                             ),
 
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.all(
-                                      12),
+                              padding: const EdgeInsets.all(12),
                               child: Image.asset(
                                 "assets/EnterOTP-pana.png",
                                 fit: BoxFit.contain,
@@ -236,16 +223,13 @@ class _OtpPageState extends State<OtpPage> {
 
                           // TITLE
                           const Align(
-                            alignment:
-                                Alignment.centerLeft,
+                            alignment: Alignment.centerLeft,
                             child: Text(
                               "OTP Verification",
                               style: TextStyle(
                                 fontSize: 30,
-                                fontWeight:
-                                    FontWeight.bold,
-                                color:
-                                    Color(0xFF22313F),
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF22313F),
                               ),
                             ),
                           ),
@@ -253,8 +237,7 @@ class _OtpPageState extends State<OtpPage> {
                           const SizedBox(height: 6),
 
                           Align(
-                            alignment:
-                                Alignment.centerLeft,
+                            alignment: Alignment.centerLeft,
                             child: Text(
                               "Kode OTP dikirim ke\n${widget.email}",
                               style: const TextStyle(
@@ -269,33 +252,22 @@ class _OtpPageState extends State<OtpPage> {
                           // OTP FIELD
                           Container(
                             decoration: BoxDecoration(
-                              color:
-                                  const Color(0xFFF5F5F5),
-                              borderRadius:
-                                  BorderRadius.circular(
-                                      18),
+                              color: const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(18),
                             ),
                             child: TextField(
-                              controller:
-                                  otpController,
-                              keyboardType:
-                                  TextInputType.number,
-                              textAlign:
-                                  TextAlign.center,
+                              controller: otpController,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
                               style: const TextStyle(
                                 letterSpacing: 8,
                                 fontSize: 20,
-                                fontWeight:
-                                    FontWeight.bold,
+                                fontWeight: FontWeight.bold,
                               ),
-                              decoration:
-                                  const InputDecoration(
-                                hintText:
-                                    "Enter OTP",
-                                border:
-                                    InputBorder.none,
-                                contentPadding:
-                                    EdgeInsets.symmetric(
+                              decoration: const InputDecoration(
+                                hintText: "Enter OTP",
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
                                   vertical: 18,
                                 ),
                               ),
@@ -309,43 +281,56 @@ class _OtpPageState extends State<OtpPage> {
                             width: double.infinity,
                             height: 54,
                             child: ElevatedButton(
-                              onPressed: isLoading
-                                  ? null
-                                  : verifyOtp,
+                              onPressed: isVerifying ? null : verifyOtp,
 
-                              style:
-                                  ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color(
-                                        0xFF0F2D3F),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0F2D3F),
                                 elevation: 0,
-                                shape:
-                                    RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                              18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
                                 ),
                               ),
 
-                              child: isLoading
+                              child: isVerifying
                                   ? const CircularProgressIndicator(
-                                      color:
-                                          Colors.white,
+                                      color: Colors.white,
                                     )
                                   : const Text(
                                       "Verify OTP",
-                                      style:
-                                          TextStyle(
+                                      style: TextStyle(
                                         fontSize: 16,
-                                        color:
-                                            Colors.white,
-                                        fontWeight:
-                                            FontWeight
-                                                .bold,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                             ),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Tidak menerima kode? ",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
+
+                              GestureDetector(
+                                onTap: isResending ? null : resendOtp,
+                                child: const Text(
+                                  "Kirim ulang OTP",
+                                  style: TextStyle(
+                                    color: Color(0xFF0F2D3F),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

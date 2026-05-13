@@ -86,6 +86,11 @@ class _MainPageState extends State<MainPage> {
     getToken();
     getProfile();
 
+
+  // =========================
+  // fungsi klik notif
+  // =========================
+    // FOREGROUND notif
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final notification = message.notification;
 
@@ -93,7 +98,42 @@ class _MainPageState extends State<MainPage> {
         NotifService.show(notification.title ?? '', notification.body ?? '');
       }
     });
+
+    // KLIK NOTIFIKASI (APP DI BACKGROUND)
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _handleNotificationClick(message);
+    });
+
+    // KLIK NOTIFIKASI (APP TERMINATED / DITUTUP)
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) {
+        _handleNotificationClick(message);
+      }
+    });
   }
+
+//kondisi klik notif
+  void _handleNotificationClick(RemoteMessage message) {
+  final data = message.data;
+
+  if (data['type'] == 'job') {
+    setState(() {
+      _currentIndex = 2; // JobsPage
+    });
+  }
+
+  if (data['type'] == 'profile') {
+    setState(() {
+      _currentIndex = 3; // ProfilePage
+    });
+  }
+
+  if (data['type'] == 'home') {
+    setState(() {
+      _currentIndex = 0;
+    });
+  }
+}
 
   // =========================
   // GET TOKEN FCM

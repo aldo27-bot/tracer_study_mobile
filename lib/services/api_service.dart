@@ -7,7 +7,7 @@ import '../models/lowongan_model.dart';
 
 class ApiService {
   // static String baseUrl = "http://172.16.103.150:8000/api";
-  static String baseUrl = "http://172.16.106.242:8000/api";
+  static String baseUrl = "http://172.16.115.186:8000/api";
 
   // ==============================
   // HELPER
@@ -65,8 +65,7 @@ class ApiService {
           body: {
             "nim": nim,
             "email": email,
-            "username": username,
-            "no_hp": no_hp,
+            "no_telp": no_telp,
             "password": password},
         )
         .timeout(const Duration(seconds: 10));
@@ -75,7 +74,7 @@ class ApiService {
   }
 
   // ==============================
-  // VERIFY OTP (FIXED)
+  // VERIFY OTP 
   // ==============================
   static Future<Map<String, dynamic>> verifyOtp(
     String email,
@@ -112,7 +111,7 @@ class ApiService {
   }
 
   // ==============================
-  // FORGOT PASSWORD (FIX)
+  // FORGOT PASSWORD 
   // ==============================
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
     final response = await http
@@ -127,7 +126,7 @@ class ApiService {
   }
 
   // ==============================
-  // RESET PASSWORD (FIX ROUTE MATCH BACKEND)
+  // RESET PASSWORD
   // ==============================
   static Future<Map<String, dynamic>> resetPassword(
     String email,
@@ -145,14 +144,14 @@ class ApiService {
   }
 
   // ==============================
-  // RESEND OTP (FIXED)
+  // RESEND OTP
   // ==============================
-  static Future<Map<String, dynamic>> resendOtp(String email) async {
+  static Future<Map<String, dynamic>> resendOtp(String email, String type) async {
     final response = await http
         .post(
           Uri.parse("$baseUrl/resend-otp"),
           headers: {"Accept": "application/json"},
-          body: {"email": email},
+          body: {"email": email, "type": type},
         )
         .timeout(const Duration(seconds: 10));
 
@@ -191,22 +190,24 @@ class ApiService {
   static Future<Map<String, dynamic>> submitAnswers(
     int userId,
     List answers,
-    ) async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token') ?? '';
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token') ?? '';
 
-      final response = await http.post(
-        Uri.parse("$baseUrl/answers"),
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token", // ← token dikirim di sini
-        },
-        body: jsonEncode({"answers": answers}),
-      ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          Uri.parse("$baseUrl/answers"),
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $token", // ← token dikirim di sini
+          },
+          body: jsonEncode({"answers": answers}),
+        )
+        .timeout(const Duration(seconds: 10));
 
-      return _handleResponse(response);
-    }
+    return _handleResponse(response);
+  }
 
   // ==============================
   // UPDATE ALAMAT
@@ -362,16 +363,25 @@ class ApiService {
     return _handleResponse(response);
   }
 
-
   // ==============================
   //get notification_page
   // ==============================
-  static Future<List> getNotifications(int userId) async {
-  final response = await http.get(
-    Uri.parse("$baseUrl/notifications/$userId"),
-    headers: {"Accept": "application/json"},
-  );
+  static Future<List<dynamic>> getNotifications(int userId) async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/notifications/$userId"),
+      headers: {"Accept": "application/json"},
+    );
 
-  return jsonDecode(response.body);
-}
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      if (data is List) {
+        return data;
+      } else {
+        throw Exception("Format data bukan list");
+      }
+    } else {
+      throw Exception("Gagal mengambil notifikasi: ${response.statusCode}");
+    }
+  }
 }
