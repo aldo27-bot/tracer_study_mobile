@@ -38,7 +38,6 @@ class _RegisterPageState extends State<RegisterPage> {
     final no_hp = no_hpController.text.trim();
     final password = passwordController.text.trim();
 
-<<<<<<< HEAD
     if (nim.isEmpty ||
         email.isEmpty ||
         username.isEmpty ||
@@ -49,12 +48,6 @@ class _RegisterPageState extends State<RegisterPage> {
           content: Text("Semua field wajib diisi"),
         ),
       );
-=======
-    if (nim.isEmpty || email.isEmpty || no_hp.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Semua field wajib diisi")));
->>>>>>> e94cdbb (update otp dan reset password)
       return;
     }
 
@@ -70,7 +63,6 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => isLoading = true);
 
     try {
-<<<<<<< HEAD
       final data = await ApiService.register(
         nim,
         email,
@@ -78,9 +70,6 @@ class _RegisterPageState extends State<RegisterPage> {
         no_hp,
         password,
       );
-=======
-      final data = await ApiService.register(nim, email, no_hp, password);
->>>>>>> e94cdbb (update otp dan reset password)
 
       if (!mounted) return;
 

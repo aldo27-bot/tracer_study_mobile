@@ -65,7 +65,8 @@ class ApiService {
           body: {
             "nim": nim,
             "email": email,
-            "no_telp": no_telp,
+            "no_telp": no_hp,
+            "username": username,
             "password": password},
         )
         .timeout(const Duration(seconds: 10));
