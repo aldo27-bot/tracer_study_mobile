@@ -95,6 +95,50 @@ class _QuestionPageState extends State<QuestionPage> {
       if (mounted) {
         setState(() {
           questions = List<Map<String, dynamic>>.from(qList);
+
+          // LOAD JAWABAN DARI DATABASE
+          for (var q in questions) {
+            final id = int.tryParse(q['id'].toString()) ?? 0;
+
+            final saved = q['saved_answer'];
+
+            if (saved == null || saved.toString().isEmpty) continue;
+
+            final type = q['type']?.toString() ?? '';
+
+            // MULTIPLE
+            if (type == 'multiple') {
+              try {
+                answers[id] = List<String>.from(jsonDecode(saved));
+              } catch (_) {
+                answers[id] = [];
+              }
+            }
+            // MATRIX
+            else if (type == 'matrix') {
+              try {
+                final decoded = jsonDecode(saved);
+
+                if (decoded is Map) {
+                  decoded.forEach((k, v) {
+                    final detail = (q['details'] as List).firstWhere(
+                      (d) => d['label'] == k,
+                      orElse: () => null,
+                    );
+
+                    if (detail != null) {
+                      answers['${id}_${detail['id']}'] = v.toString();
+                    }
+                  });
+                }
+              } catch (_) {}
+            }
+            // SINGLE / TEXT / SCALE
+            else {
+              answers[id] = saved.toString();
+            }
+          }
+
           isLoading = false;
         });
         await loadDraft();
@@ -301,7 +345,11 @@ class _QuestionPageState extends State<QuestionPage> {
     if (type == 'text' && dataType == 'text') {
       return TextFormField(
         initialValue: answers[id]?.toString(),
-        onChanged: (v) => answers[id] = v,
+        onChanged: (v) {
+          setState(() {
+            answers[id] = v;
+          });
+        },
         maxLines: 3,
         decoration: _dec('Tulis jawaban Anda di sini...'),
         style: const TextStyle(fontSize: 14),
@@ -313,7 +361,11 @@ class _QuestionPageState extends State<QuestionPage> {
       return TextFormField(
         keyboardType: TextInputType.number,
         initialValue: answers[id]?.toString(),
-        onChanged: (v) => answers[id] = v,
+        onChanged: (v) {
+          setState(() {
+            answers[id] = v;
+          });
+        },
         decoration: _dec(
           dataType == 'year' ? 'Contoh: 2023' : 'Masukkan angka',
         ),
@@ -1139,7 +1191,12 @@ class _QuestionPageState extends State<QuestionPage> {
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           style: OutlinedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(230, 3, 110, 242),
+                            backgroundColor: const Color.fromARGB(
+                              230,
+                              3,
+                              110,
+                              242,
+                            ),
                             foregroundColor: _kPrimary,
                             side: const BorderSide(
                               color: _kPrimary,
@@ -1178,8 +1235,18 @@ class _QuestionPageState extends State<QuestionPage> {
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(255, 2, 255, 40),
-                            foregroundColor: const Color.fromARGB(255, 7, 3, 43),
+                            backgroundColor: const Color.fromARGB(
+                              255,
+                              2,
+                              255,
+                              40,
+                            ),
+                            foregroundColor: const Color.fromARGB(
+                              255,
+                              7,
+                              3,
+                              43,
+                            ),
                             side: const BorderSide(
                               color: Color.fromARGB(255, 7, 3, 43),
                               width: 1.5,
@@ -1217,7 +1284,10 @@ class _QuestionPageState extends State<QuestionPage> {
                     ),
                     label: const Text(
                       'Reset Draft',
-                      style: TextStyle(color: Color.fromARGB(255, 254, 6, 6), fontSize: 12),
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 254, 6, 6),
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ),

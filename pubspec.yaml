@@ -57,10 +57,12 @@ dev_dependencies:
 
   rename_app: ^1.6.1
 
+  image_picker: ^1.1.2
+
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/graduation_hat.png"
+  image_path: "assets/tracerlogo.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -88,6 +90,8 @@ flutter:
     - assets/Signup-amico.png
     - assets/animations/education.riv
     - assets/Reset_password.png
+    - assets/logotracer.png
+    - assets/tracerlogo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -123,11 +127,12 @@ flutter:
 flutter_native_splash:
   color: "#FFFFFF"
 
-  image: assets/graduation_hat.png
+  image: assets/tracerlogo.png
 
   android: true
   ios: true
 
   android_12:
     color: "#FFFFFF"
-    image: assets/graduation_hat.png
+    image: assets/tracerlogo.png
+    icon_background_color: "#FFFFFF"

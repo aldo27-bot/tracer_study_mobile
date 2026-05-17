@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:async';
-// import 'dart:io';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/lowongan_model.dart';
 
 class ApiService {
   // static String baseUrl = "http://172.16.103.150:8000/api";
-  static String baseUrl = "http://172.16.106.40:8000/api";
+  static String baseUrl = "http://192.168.1.6:8000/api";
 
   // ==============================
   // HELPER
@@ -67,7 +67,8 @@ class ApiService {
             "email": email,
             "no_hp": no_hp,
             "username": username,
-            "password": password},
+            "password": password,
+          },
         )
         .timeout(const Duration(seconds: 10));
 
@@ -75,7 +76,7 @@ class ApiService {
   }
 
   // ==============================
-  // VERIFY OTP 
+  // VERIFY OTP
   // ==============================
   static Future<Map<String, dynamic>> verifyOtp(
     String email,
@@ -112,7 +113,7 @@ class ApiService {
   }
 
   // ==============================
-  // FORGOT PASSWORD 
+  // FORGOT PASSWORD
   // ==============================
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
     final response = await http
@@ -147,7 +148,10 @@ class ApiService {
   // ==============================
   // RESEND OTP
   // ==============================
-  static Future<Map<String, dynamic>> resendOtp(String email, String type) async {
+  static Future<Map<String, dynamic>> resendOtp(
+    String email,
+    String type,
+  ) async {
     final response = await http
         .post(
           Uri.parse("$baseUrl/resend-otp"),
@@ -267,27 +271,39 @@ class ApiService {
   //edit rofile
   // ==============================
 
-  static Future updateProfile(
+  static Future<Map<String, dynamic>> updateProfile(
     String nim,
     String nama,
     String prodi,
     int angkatan,
     int tahunLulus,
     String alamat,
+    File? image,
+    bool removeImage,
   ) async {
-    final response = await http.post(
+    var request = http.MultipartRequest(
+      'POST',
       Uri.parse("$baseUrl/update-profile"),
-      body: {
-        "nim": nim,
-        "nama": nama,
-        "prodi": prodi,
-        "angkatan": angkatan.toString(),
-        "tahun_lulus": tahunLulus.toString(),
-        "alamat": alamat,
-      },
     );
 
-    return json.decode(response.body);
+    request.fields['nim'] = nim;
+    request.fields['nama'] = nama;
+    request.fields['prodi'] = prodi;
+    request.fields['angkatan'] = angkatan.toString();
+    request.fields['tahun_lulus'] = tahunLulus.toString();
+    request.fields['alamat'] = alamat;
+
+    if (image != null) {
+      request.files.add(await http.MultipartFile.fromPath('image', image.path));
+    }
+
+    request.fields['remove_image'] = removeImage ? '1' : '0';
+
+    final response = await request.send();
+
+    final responseString = await response.stream.bytesToString();
+
+    return jsonDecode(responseString);
   }
 
   // ==============================

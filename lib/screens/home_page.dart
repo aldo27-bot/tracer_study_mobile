@@ -4,6 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:projectsemester4/screens/notification_page.dart';
 import 'package:projectsemester4/screens/question_page.dart';
 import 'dart:convert';
+import 'package:flutter/services.dart';
 
 import '../services/api_service.dart';
 import 'login_page.dart';
@@ -34,6 +35,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+//status bar hp jadi warna hitam
+      SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ),
+  );
 
     getName();
     loadStatistik();

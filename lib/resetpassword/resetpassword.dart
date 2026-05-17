@@ -4,28 +4,40 @@ import 'package:projectsemester4/services/api_service.dart';
 class ResetPasswordPage extends StatefulWidget {
   final String email;
 
-  const ResetPasswordPage({
-    Key? key,
-    required this.email,
-  }) : super(key: key);
+  const ResetPasswordPage({Key? key, required this.email}) : super(key: key);
 
   @override
-  State<ResetPasswordPage> createState() =>
-      _ResetPasswordPageState();
+  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
 }
 
-class _ResetPasswordPageState
-    extends State<ResetPasswordPage> {
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final passwordController = TextEditingController();
 
   bool isLoading = false;
 
+  // VALIDASI PASSWORD
+  // minimal 8 karakter
+  // wajib huruf besar, huruf kecil, dan angka
+  bool isValidPassword(String password) {
+    return RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$').hasMatch(password);
+  }
+
   Future<void> resetPassword() async {
-    if (passwordController.text.isEmpty) {
+    final password = passwordController.text.trim();
+
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password tidak boleh kosong")),
+      );
+      return;
+    }
+
+    // VALIDASI PASSWORD
+    if (!isValidPassword(password)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            "Password tidak boleh kosong",
+            "Password minimal 8 karakter, wajib huruf besar, kecil, dan angka",
           ),
         ),
       );
@@ -35,40 +47,23 @@ class _ResetPasswordPageState
     setState(() => isLoading = true);
 
     try {
-      final response =
-          await ApiService.resetPassword(
-        widget.email,
-        passwordController.text.trim(),
-      );
+      final response = await ApiService.resetPassword(widget.email, password);
 
       if (response['status'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Password berhasil diubah",
-            ),
-          ),
+          const SnackBar(content: Text("Password berhasil diubah")),
         );
 
-        Navigator.popUntil(
-          context,
-          (route) => route.isFirst,
-        );
+        Navigator.popUntil(context, (route) => route.isFirst);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              response['message'],
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(response['message'])));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: $e"),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       setState(() => isLoading = false);
     }
@@ -92,15 +87,9 @@ class _ResetPasswordPageState
           hintText: hint,
           border: InputBorder.none,
 
-          prefixIcon: Icon(
-            icon,
-            color: Colors.grey,
-          ),
+          prefixIcon: Icon(icon, color: Colors.grey),
 
-          contentPadding:
-              const EdgeInsets.symmetric(
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );
@@ -121,8 +110,7 @@ class _ResetPasswordPageState
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding:
-                const EdgeInsets.only(bottom: 30),
+            padding: const EdgeInsets.only(bottom: 30),
             child: Column(
               children: [
                 // TOP SHAPE
@@ -130,15 +118,11 @@ class _ResetPasswordPageState
                   children: [
                     Container(
                       height: 220,
-                      decoration:
-                          const BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Color(0xFF0F2D3F),
-                        borderRadius:
-                            BorderRadius.only(
-                          bottomLeft:
-                              Radius.circular(120),
-                          bottomRight:
-                              Radius.circular(120),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(120),
+                          bottomRight: Radius.circular(120),
                         ),
                       ),
                     ),
@@ -149,8 +133,7 @@ class _ResetPasswordPageState
                       child: Container(
                         width: 40,
                         height: 40,
-                        decoration:
-                            const BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Color(0xFF5D7B93),
                           shape: BoxShape.circle,
                         ),
@@ -163,8 +146,7 @@ class _ResetPasswordPageState
                       child: Icon(
                         Icons.lock_outline,
                         size: 90,
-                        color: Colors.white
-                            .withOpacity(0.15),
+                        color: Colors.white.withOpacity(0.15),
                       ),
                     ),
                   ],
@@ -174,26 +156,17 @@ class _ResetPasswordPageState
                 Transform.translate(
                   offset: const Offset(0, -40),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 24,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Container(
-                      padding:
-                          const EdgeInsets.all(22),
+                      padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(
-                          30,
-                        ),
+                        borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black
-                                .withOpacity(0.08),
+                            color: Colors.black.withOpacity(0.08),
                             blurRadius: 20,
-                            offset:
-                                const Offset(0, 8),
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
@@ -205,18 +178,12 @@ class _ResetPasswordPageState
                             height: 120,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius
-                                      .circular(22),
-                              color: const Color(
-                                0xFFF5F5F5,
-                              ),
+                              borderRadius: BorderRadius.circular(22),
+                              color: const Color(0xFFF5F5F5),
                             ),
 
                             child: Padding(
-                              padding:
-                                  const EdgeInsets
-                                      .all(12),
+                              padding: const EdgeInsets.all(12),
                               child: Image.asset(
                                 "assets/Reset_password.png",
                                 fit: BoxFit.contain,
@@ -224,23 +191,17 @@ class _ResetPasswordPageState
                             ),
                           ),
 
-                          const SizedBox(
-                            height: 20,
-                          ),
+                          const SizedBox(height: 20),
 
                           // TITLE
                           const Align(
-                            alignment:
-                                Alignment.centerLeft,
+                            alignment: Alignment.centerLeft,
                             child: Text(
                               "Reset Password",
                               style: TextStyle(
                                 fontSize: 28,
-                                fontWeight:
-                                    FontWeight.bold,
-                                color: Color(
-                                  0xFF22313F,
-                                ),
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF22313F),
                               ),
                             ),
                           ),
@@ -248,8 +209,7 @@ class _ResetPasswordPageState
                           const SizedBox(height: 6),
 
                           Align(
-                            alignment:
-                                Alignment.centerLeft,
+                            alignment: Alignment.centerLeft,
                             child: Text(
                               "Masukkan password baru untuk\n${widget.email}",
                               style: const TextStyle(
@@ -259,106 +219,70 @@ class _ResetPasswordPageState
                             ),
                           ),
 
-                          const SizedBox(
-                            height: 22,
-                          ),
+                          const SizedBox(height: 22),
 
                           // PASSWORD FIELD
                           buildInputField(
-                            controller:
-                                passwordController,
-                            hint:
-                                "Password Baru",
-                            icon:
-                                Icons.lock_outline,
+                            controller: passwordController,
+                            hint: "Password Baru",
+                            icon: Icons.lock_outline,
                           ),
 
-                          const SizedBox(
-                            height: 10,
-                          ),
+                          const SizedBox(height: 10),
 
                           // BUTTON
                           SizedBox(
                             width: double.infinity,
                             height: 54,
                             child: ElevatedButton(
-                              onPressed: isLoading
-                                  ? null
-                                  : resetPassword,
+                              onPressed: isLoading ? null : resetPassword,
 
-                              style:
-                                  ElevatedButton
-                                      .styleFrom(
-                                backgroundColor:
-                                    const Color(
-                                  0xFF0F2D3F,
-                                ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0F2D3F),
                                 elevation: 0,
-                                shape:
-                                    RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                    18,
-                                  ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
                                 ),
                               ),
 
                               child: isLoading
                                   ? const CircularProgressIndicator(
-                                      color: Colors
-                                          .white,
+                                      color: Colors.white,
                                     )
                                   : const Text(
                                       "Reset Password",
-                                      style:
-                                          TextStyle(
-                                        fontSize:
-                                            16,
-                                        color: Colors
-                                            .white,
-                                        fontWeight:
-                                            FontWeight
-                                                .bold,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                             ),
                           ),
 
-                          const SizedBox(
-                            height: 18,
-                          ),
+                          const SizedBox(height: 18),
 
                           // BACK
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment
-                                    .center,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
                                 "kembali ke ",
                                 style: TextStyle(
-                                  color:
-                                      Colors.grey,
+                                  color: Colors.grey,
                                   fontSize: 13,
                                 ),
                               ),
 
                               GestureDetector(
                                 onTap: () {
-                                  Navigator.pop(
-                                    context,
-                                  );
+                                  Navigator.pop(context);
                                 },
                                 child: const Text(
                                   "halaman sebelumnya",
                                   style: TextStyle(
-                                    color: Color(
-                                      0xFF0F2D3F,
-                                    ),
-                                    fontWeight:
-                                        FontWeight
-                                            .bold,
+                                    color: Color(0xFF0F2D3F),
+                                    fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),
                                 ),

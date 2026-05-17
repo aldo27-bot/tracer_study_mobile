@@ -9,6 +9,7 @@ class AlumniModel {
   final String? tanggalLahir;
   final String tahunLulus;
   final String? alamat;
+  final String? image;
 
   AlumniModel({
     required this.nama,
@@ -21,6 +22,7 @@ class AlumniModel {
     this.tanggalLahir,
     required this.tahunLulus,
     this.alamat,
+    this.image,
   });
 
   factory AlumniModel.fromJson(Map<String, dynamic>? json) {
@@ -37,6 +39,7 @@ class AlumniModel {
     tanggalLahir: data['tanggal_lahir']?.toString(),
     tahunLulus: data['tahun_lulus']?.toString() ?? '',
     alamat: data['alamat']?.toString(),
+    image: data['image']?.toString(),
   );
 }
 }

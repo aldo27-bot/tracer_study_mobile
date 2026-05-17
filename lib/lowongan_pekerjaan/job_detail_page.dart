@@ -239,7 +239,7 @@ class JobDetailPage extends StatelessWidget {
                   },
 
                   child: const Text(
-                    "Lamar Sekarang",
+                    "Lihat Loker",
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.orange,

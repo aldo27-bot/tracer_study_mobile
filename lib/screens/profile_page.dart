@@ -27,9 +27,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    loadProfile();
     alumniData = widget.alumni;
     alamatView = widget.alumni.alamat ?? "";
-
     _alamatController = TextEditingController(text: alamatView);
   }
 
@@ -37,6 +37,14 @@ class _ProfilePageState extends State<ProfilePage> {
   void dispose() {
     _alamatController.dispose();
     super.dispose();
+  }
+
+  // =========================
+  // HELPER: FIX IMAGE CACHE + NULL
+  // =========================
+  String getImageUrl(String? image) {
+    if (image == null || image.isEmpty) return "";
+    return "${ApiService.baseUrl.replaceAll('/api', '')}/storage/$image?v=${DateTime.now().millisecondsSinceEpoch}";
   }
 
   Future<void> updateAlamat() async {
@@ -70,15 +78,52 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
       }
     }
   }
+
+
+  // =========================
+  // Ambil data terbaru
+  // =========================
+  Future<void> loadProfile() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id');
+
+    if (userId == null) return;
+
+    final data = await ApiService.getProfile(userId);
+
+    if (data['status'] == true) {
+      final user = data['data'];
+
+      setState(() {
+        alumniData = AlumniModel(
+          nama: user['nama'],
+          nim: user['nim'],
+          prodi: user['prodi'],
+          angkatan: user['angkatan'].toString(),
+          tahunLulus: user['tahun_lulus'].toString(),
+          alamat: user['alamat'],
+          image: user['image'],
+          email: user['email'],
+          no_hp: user['no_hp'],
+          tempatLahir: user['tempat_lahir'],
+          tanggalLahir: user['tanggal_lahir'],
+        );
+      });
+    }
+  } catch (e) {
+    print("ERROR LOAD PROFILE: $e");
+  }
+}
 
   Widget buildDataMenuItem(IconData icon, String title, String value) {
     return Container(
@@ -111,18 +156,12 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
+                Text(title,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -160,15 +199,36 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   child: Column(
                     children: [
-                      const CircleAvatar(
+                      // =========================
+                      // FOTO PROFILE (FIX DELETE + CACHE)
+                      // =========================
+                      CircleAvatar(
                         radius: 42,
-                        backgroundColor: Color(0xFF0F2D3F),
-                        child: Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 45,
+                        backgroundColor: const Color(0xFF0F2D3F),
+                        child: ClipOval(
+                          child: (alumniData.image != null &&
+                                  alumniData.image!.isNotEmpty)
+                              ? Image.network(
+                                  getImageUrl(alumniData.image),
+                                  width: 84,
+                                  height: 84,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 45,
+                                    );
+                                  },
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 45,
+                                ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
 
                       Text(
@@ -182,26 +242,27 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       const SizedBox(height: 6),
 
-                      Text(a.nim, style: const TextStyle(color: Colors.grey)),
+                      Text(a.nim,
+                          style: const TextStyle(color: Colors.grey)),
 
                       const SizedBox(height: 10),
 
-                      Text(
-                        a.prodi,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
+                      Text(a.prodi,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.grey)),
 
                       const SizedBox(height: 20),
 
-                      // BUTTON EDIT PROFILE
+                      // =========================
+                      // EDIT PROFILE
+                      // =========================
                       ElevatedButton.icon(
                         onPressed: () async {
                           final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  EditProfilePage(alumni: widget.alumni),
+                                  EditProfilePage(alumni: alumniData),
                             ),
                           );
 
@@ -213,7 +274,15 @@ class _ProfilePageState extends State<ProfilePage> {
                               angkatan: result["angkatan"].toString(),
                               tahunLulus: result["tahunLulus"].toString(),
                               alamat: result["alamat"],
+
+                              // FIX: handle image null (hapus foto)
+                              image: (result["image"] != null &&
+                                      result["image"].toString().isNotEmpty)
+                                  ? result["image"]
+                                  : null,
+
                               email: alumniData.email,
+                              no_hp: alumniData.no_hp,
                               tempatLahir: alumniData.tempatLahir,
                               tanggalLahir: alumniData.tanggalLahir,
                             );
@@ -222,6 +291,14 @@ class _ProfilePageState extends State<ProfilePage> {
                               alumniData = updated;
                               alamatView = result["alamat"];
                             });
+
+                            // force refresh UI (anti cache image)
+                            Future.delayed(
+                              const Duration(milliseconds: 50),
+                              () {
+                                if (mounted) setState(() {});
+                              },
+                            );
 
                             widget.onProfileUpdate?.call(updated);
                           }
@@ -244,7 +321,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       const SizedBox(height: 12),
 
-                      // BUTTON LUPA PASSWORD
+                      // LUPA PASSWORD
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
@@ -257,10 +334,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                             );
                           },
-                          icon: const Icon(
-                            Icons.lock_reset,
-                            color: Color(0xFF0F2D3F),
-                          ),
+                          icon: const Icon(Icons.lock_reset,
+                              color: Color(0xFF0F2D3F)),
                           label: const Text(
                             "Lupa Password",
                             style: TextStyle(
@@ -269,7 +344,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF0F2D3F)),
+                            side:
+                                const BorderSide(color: Color(0xFF0F2D3F)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -283,6 +359,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 20),
 
+              // =========================
+              // DATA LIST
+              // =========================
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -290,16 +369,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     buildDataMenuItem(Icons.person, "Nama", a.nama),
                     buildDataMenuItem(Icons.badge, "NIM", a.nim),
                     buildDataMenuItem(Icons.school, "Prodi", a.prodi),
-                    buildDataMenuItem(
-                      Icons.calendar_month,
-                      "Angkatan",
-                      a.angkatan,
-                    ),
-                    buildDataMenuItem(
-                      Icons.workspace_premium,
-                      "Tahun Lulus",
-                      a.tahunLulus,
-                    ),
+                    buildDataMenuItem(Icons.calendar_month, "Angkatan", a.angkatan),
+                    buildDataMenuItem(Icons.workspace_premium, "Tahun Lulus", a.tahunLulus),
                     buildDataMenuItem(Icons.location_on, "Alamat", alamatView),
                   ],
                 ),
@@ -307,54 +378,25 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 10),
 
+              // =========================
+              // LOGOUT
+              // =========================
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      final result = await showDialog<bool>(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text("Logout"),
-                            content: const Text(
-                              "Apakah Anda yakin ingin logout?",
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, false);
-                                },
-                                child: const Text("Batal"),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, true);
-                                },
-                                child: const Text(
-                                  "Logout",
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.clear();
+
+                      if (!mounted) return;
+
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
+                        (route) => false,
                       );
-
-                      if (result == true) {
-                        final prefs = await SharedPreferences.getInstance();
-
-                        await prefs.clear();
-
-                        if (!mounted) return;
-
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginPage()),
-                          (route) => false,
-                        );
-                      }
                     },
                     icon: const Icon(Icons.logout, color: Colors.red),
                     label: const Text(
@@ -366,9 +408,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF3F5F7),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
                     ),
                   ),
                 ),

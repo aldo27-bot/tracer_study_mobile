@@ -28,6 +28,19 @@ class _RegisterPageState extends State<RegisterPage> {
     return RegExp(r"^[\w-\.]+@gmail\.com$").hasMatch(email);
   }
 
+  // VALIDASI USERNAME
+  // hanya huruf, angka, dan underscore
+  bool isValidUsername(String username) {
+    return RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username);
+  }
+
+  // VALIDASI PASSWORD
+  // minimal 8 karakter
+  // wajib huruf besar, huruf kecil, angka
+  bool isValidPassword(String password) {
+    return RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$').hasMatch(password);
+  }
+
   // REGISTER FUNCTION
   Future<void> register() async {
     if (isLoading) return;
@@ -43,11 +56,9 @@ class _RegisterPageState extends State<RegisterPage> {
         username.isEmpty ||
         no_hp.isEmpty ||
         password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Semua field wajib diisi"),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Semua field wajib diisi")));
       return;
     }
 
@@ -55,6 +66,26 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Email harus menggunakan Format @gmail.com"),
+        ),
+      );
+      return;
+    }
+
+    if (!isValidUsername(username)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Username tidak boleh mengandung simbol atau emote"),
+        ),
+      );
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Password minimal 8 karakter, wajib huruf besar, kecil, dan angka",
+          ),
         ),
       );
       return;
@@ -311,8 +342,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                           // USERNAME
                           buildInputField(
-                            controller:
-                                usernameController,
+                            controller: usernameController,
                             hint: "Username",
                             icon: Icons.person_outlined,
                           ),

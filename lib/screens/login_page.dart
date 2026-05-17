@@ -68,6 +68,8 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString('name', safeString(user['name']));
         await prefs.setInt('user_id', safeInt(user['user_id']));
         await prefs.setString('auth_token', safeString(data['token']));
+        await prefs.setString('image', safeString(user['image']));
+        await prefs.setString('alamat', safeString(user['alamat']));
 
         if (!mounted) return;
 
@@ -87,18 +89,14 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => OtpPage(
-                email: emailController.text.trim(),
-                type: 'login',
-              ),
+              builder: (_) =>
+                  OtpPage(email: emailController.text.trim(), type: 'login'),
             ),
           );
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data['message'] ?? "Login gagal"),
-          ),
+          SnackBar(content: Text(data['message'] ?? "Login gagal")),
         );
       }
     } on TimeoutException {
@@ -110,16 +108,16 @@ class _LoginPageState extends State<LoginPage> {
         const SnackBar(content: Text("Tidak bisa terhubung ke server")),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
 
     setState(() => isLoading = false);
   }
 
   // =========================
-  // UI INPUT (TIDAK DIUBAH)
+  // UI INPUT
   // =========================
   Widget buildInputField({
     required TextEditingController controller,
@@ -148,9 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                     });
                   },
                   icon: Icon(
-                    obscurePassword
-                        ? Icons.visibility_off
-                        : Icons.visibility,
+                    obscurePassword ? Icons.visibility_off : Icons.visibility,
                     color: Colors.grey,
                   ),
                 )
@@ -235,13 +231,18 @@ class _LoginPageState extends State<LoginPage> {
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(22),
-                              color: const Color(0xFFF5F5F5),
+                              color: const Color(0xFFFFFFFF),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Image.asset(
-                                "assets/graduation_hat.png",
-                                fit: BoxFit.contain,
+                              padding: const EdgeInsets.all(
+                                0,
+                              ), 
+                              child: Center(
+                                child: Image.asset(
+                                  "assets/tracerlogo.png",
+                                  width: 560, // atur ukuran logo 
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                             ),
                           ),
