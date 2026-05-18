@@ -95,50 +95,7 @@ class _QuestionPageState extends State<QuestionPage> {
       if (mounted) {
         setState(() {
           questions = List<Map<String, dynamic>>.from(qList);
-
-          // LOAD JAWABAN DARI DATABASE
-          for (var q in questions) {
-            final id = int.tryParse(q['id'].toString()) ?? 0;
-
-            final saved = q['saved_answer'];
-
-            if (saved == null || saved.toString().isEmpty) continue;
-
-            final type = q['type']?.toString() ?? '';
-
-            // MULTIPLE
-            if (type == 'multiple') {
-              try {
-                answers[id] = List<String>.from(jsonDecode(saved));
-              } catch (_) {
-                answers[id] = [];
-              }
-            }
-            // MATRIX
-            else if (type == 'matrix') {
-              try {
-                final decoded = jsonDecode(saved);
-
-                if (decoded is Map) {
-                  decoded.forEach((k, v) {
-                    final detail = (q['details'] as List).firstWhere(
-                      (d) => d['label'] == k,
-                      orElse: () => null,
-                    );
-
-                    if (detail != null) {
-                      answers['${id}_${detail['id']}'] = v.toString();
-                    }
-                  });
-                }
-              } catch (_) {}
-            }
-            // SINGLE / TEXT / SCALE
-            else {
-              answers[id] = saved.toString();
-            }
-          }
-
+          // saved_answer tidak ada di API response — jawaban di-load dari draft
           isLoading = false;
         });
         await loadDraft();
@@ -179,32 +136,37 @@ class _QuestionPageState extends State<QuestionPage> {
     final raw = prefs.getString(draftKey);
     if (raw == null) return;
 
-    final data = jsonDecode(raw);
-    final savedAnswers = data["answers"] as Map<String, dynamic>;
-    final typeById = {
-      for (final q in questions)
-        q['id'].toString(): q['type']?.toString() ?? '',
-    };
-    final validIds = questions.map((q) => q['id'].toString()).toSet();
+    try {
+      final data = jsonDecode(raw);
+      final savedAnswers = data["answers"] as Map<String, dynamic>;
+      final typeById = {
+        for (final q in questions)
+          q['id'].toString(): q['type']?.toString() ?? '',
+      };
+      final validIds = questions.map((q) => q['id'].toString()).toSet();
 
-    setState(() {
-      answers = {};
-      savedAnswers.forEach((key, value) {
-        final baseId = key.contains('_') ? key.split('_')[0] : key;
-        if (!validIds.contains(baseId)) return;
-        final rKey = int.tryParse(key) ?? key;
-        final qType = typeById[baseId] ?? '';
-        if (qType == 'multiple') {
-          answers[rKey] = _parseMultipleValue(value);
-        } else if (qType == 'single' || qType == 'scale' || qType == 'text') {
-          answers[rKey] = (value is List)
-              ? (value.isNotEmpty ? value.first.toString() : null)
-              : value?.toString();
-        } else {
-          answers[rKey] = value;
-        }
+      setState(() {
+        answers = {};
+        savedAnswers.forEach((key, value) {
+          final baseId = key.contains('_') ? key.split('_')[0] : key;
+          if (!validIds.contains(baseId)) return;
+          final rKey = int.tryParse(key) ?? key;
+          final qType = typeById[baseId] ?? '';
+          if (qType == 'multiple') {
+            answers[rKey] = _parseMultipleValue(value);
+          } else if (qType == 'single' || qType == 'scale' || qType == 'text') {
+            answers[rKey] = (value is List)
+                ? (value.isNotEmpty ? value.first.toString() : null)
+                : value?.toString();
+          } else {
+            // matrix key format: "questionId_detailId"
+            answers[rKey] = value;
+          }
+        });
       });
-    });
+    } catch (e) {
+      debugPrint("ERROR LOAD DRAFT: $e");
+    }
   }
 
   List<dynamic> _parseMultipleValue(dynamic value) {
@@ -238,6 +200,7 @@ class _QuestionPageState extends State<QuestionPage> {
     final type = q['type']?.toString() ?? '';
     if (type == 'matrix') {
       final details = q['details'] is List ? q['details'] as List : [];
+      if (details.isEmpty) return false;
       return details.every((d) {
         final mapKey = '${id}_${d['id']}';
         return answers.containsKey(mapKey) &&
@@ -252,43 +215,90 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   // =============================================
-  // CONDITIONAL
+  // CONDITIONAL — logika tampil/sembunyi soal
+  // berdasarkan kode soal Kemendikbud
   // =============================================
   bool shouldShow(Map<String, dynamic> q) {
     final kode = q['kode_soal']?.toString() ?? '';
     final status = _getAnswerByKode('f8');
+
+    // ---- Hanya tampil jika status = Bekerja ----
     if ([
-      'f502',
-      'f505',
-      'f5a1',
-      'f5a2',
-      'f1101',
-      'f1102',
-      'f5b',
-      'f5d',
-      'f6',
-      'f7',
-      'f7a',
-    ].contains(kode))
+      'f502', // bulan dapat pekerjaan pertama
+      'f5a1', // provinsi tempat bekerja
+      'f5a2', // kota/kabupaten tempat bekerja
+      'f1101', // jenis perusahaan
+      'f5b', // nama perusahaan
+      'f5d', // tingkat tempat kerja
+      'f6', // jumlah perusahaan dilamar
+      'f7', // yang merespons
+      'f7a', // yang wawancara
+    ].contains(kode)) {
       return status.contains('Bekerja');
-    if (['f503', 'f5c'].contains(kode)) return status.contains('Wiraswasta');
-    if (['f18a', 'f18b', 'f18c', 'f18d'].contains(kode))
+    }
+
+    // ---- f505 (pendapatan) tampil untuk Bekerja DAN Wiraswasta ----
+    if (kode == 'f505') {
+      return status.contains('Bekerja') || status.contains('Wiraswasta');
+    }
+
+    // ---- Hanya tampil jika status = Wiraswasta ----
+    if ([
+      'f503', // bulan mulai wiraswasta
+      'f5c', // posisi/jabatan wiraswasta
+    ].contains(kode)) {
+      return status.contains('Wiraswasta');
+    }
+
+    // ---- Hanya tampil jika status = Melanjutkan Pendidikan ----
+    if ([
+      'f18a', // sumber biaya studi lanjut
+      'f18b', // perguruan tinggi
+      'f18c', // program studi
+      'f18d', // tanggal masuk
+    ].contains(kode)) {
       return status.contains('Melanjutkan Pendidikan');
-    if (kode == 'f302')
+    }
+
+    // ---- f1101 lainnya (jenis perusahaan lainnya) ----
+    if (kode == 'f1102') {
+      return _getAnswerByKode('f1101').contains('Lainnya');
+    }
+
+    // ---- f1201 lainnya (sumber dana lainnya) ----
+    if (kode == 'f1202') {
+      return _getAnswerByKode('f1201').contains('Lainnya');
+    }
+
+    // ---- f301 kondisional: bulan sebelum/sesudah lulus ----
+    if (kode == 'f302') {
       return _getAnswerByKode('f301').contains('sebelum lulus');
-    if (kode == 'f303')
+    }
+    if (kode == 'f303') {
       return _getAnswerByKode('f301').contains('sesudah lulus');
-    if (kode == 'f1002') return _getAnswerByKode('f1001').contains('Lainnya');
-    if (kode == 'f416')
+    }
+
+    // ---- f401-f416 lainnya ----
+    if (kode == 'f416') {
       return _getAnswerByKode('f401-f416').contains('Lainnya');
-    if (kode == 'f1102') return _getAnswerByKode('f1101').contains('Lainnya');
-    if (kode == 'f1202') return _getAnswerByKode('f1201').contains('Lainnya');
-    if (kode == 'f1614')
+    }
+
+    // ---- f1001 lainnya ----
+    if (kode == 'f1002') {
+      return _getAnswerByKode('f1001').contains('Lainnya');
+    }
+
+    // ---- f1601-f1614 lainnya ----
+    if (kode == 'f1614') {
       return _getAnswerByKode('f1601-f1614').contains('Lainnya');
+    }
+
+    // Semua pertanyaan lain selalu tampil
     return true;
   }
 
   void _resetConditionalAnswers() {
+    // Reset semua jawaban kondisional saat status (f8) berubah
     for (final kode in [
       'f502',
       'f503',
@@ -309,7 +319,9 @@ class _QuestionPageState extends State<QuestionPage> {
         (q) => q['kode_soal']?.toString() == kode,
         orElse: () => {},
       );
-      if (q.isNotEmpty) answers.remove(int.tryParse(q['id'].toString()) ?? 0);
+      if (q.isNotEmpty) {
+        answers.remove(int.tryParse(q['id'].toString()) ?? 0);
+      }
     }
   }
 
@@ -345,11 +357,7 @@ class _QuestionPageState extends State<QuestionPage> {
     if (type == 'text' && dataType == 'text') {
       return TextFormField(
         initialValue: answers[id]?.toString(),
-        onChanged: (v) {
-          setState(() {
-            answers[id] = v;
-          });
-        },
+        onChanged: (v) => setState(() => answers[id] = v),
         maxLines: 3,
         decoration: _dec('Tulis jawaban Anda di sini...'),
         style: const TextStyle(fontSize: 14),
@@ -361,11 +369,7 @@ class _QuestionPageState extends State<QuestionPage> {
       return TextFormField(
         keyboardType: TextInputType.number,
         initialValue: answers[id]?.toString(),
-        onChanged: (v) {
-          setState(() {
-            answers[id] = v;
-          });
-        },
+        onChanged: (v) => setState(() => answers[id] = v),
         decoration: _dec(
           dataType == 'year' ? 'Contoh: 2023' : 'Masukkan angka',
         ),
@@ -390,10 +394,11 @@ class _QuestionPageState extends State<QuestionPage> {
               child: child!,
             ),
           );
-          if (picked != null)
+          if (picked != null) {
             setState(
               () => answers[id] = picked.toIso8601String().split('T')[0],
             );
+          }
         },
         borderRadius: BorderRadius.circular(10),
         child: Container(
@@ -440,6 +445,7 @@ class _QuestionPageState extends State<QuestionPage> {
           return GestureDetector(
             onTap: () => setState(() {
               answers[id] = label;
+              // Reset jawaban kondisional saat status berubah
               if (q['kode_soal'] == 'f8') _resetConditionalAnswers();
             }),
             child: AnimatedContainer(
@@ -683,7 +689,6 @@ class _QuestionPageState extends State<QuestionPage> {
         ),
         child: Column(
           children: [
-            // Header
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
               decoration: BoxDecoration(
@@ -699,17 +704,15 @@ class _QuestionPageState extends State<QuestionPage> {
                     5,
                     (i) => Expanded(
                       flex: 1,
-                      child: Column(
-                        children: [
-                          Text(
-                            '${i + 1}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: _kPrimary,
-                            ),
+                      child: Center(
+                        child: Text(
+                          '${i + 1}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: _kPrimary,
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -835,21 +838,24 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   // =============================================
-  // SUBMIT
+  // SUBMIT — sinkron dengan MobileAnswerController
   // =============================================
   Future<void> submit() async {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
+
     try {
       final validIds = questions
           .map((q) => int.tryParse(q['id'].toString()) ?? 0)
           .where((id) => id > 0)
           .toSet();
+
       List payload = [];
 
+      // ---- Non-matrix answers ----
       answers.forEach((k, v) {
         final keyStr = k.toString();
-        if (keyStr.contains('_')) return;
+        if (keyStr.contains('_')) return; // skip matrix keys
         final qId = int.tryParse(keyStr) ?? 0;
         if (qId <= 0 || !validIds.contains(qId)) return;
         if (v == null || (v is String && v.isEmpty) || (v is List && v.isEmpty))
@@ -860,6 +866,11 @@ class _QuestionPageState extends State<QuestionPage> {
         });
       });
 
+      // ---- Matrix answers ----
+      // Kumpulkan per question_id, kirim sebagai JSON {"label": "value"}
+      // Backend (MobileAnswerController) membaca field 'item' sebagai label
+      final Map<int, Map<String, String>> matrixByQuestion = {};
+
       answers.forEach((k, v) {
         final keyStr = k.toString();
         if (!keyStr.contains('_')) return;
@@ -869,10 +880,36 @@ class _QuestionPageState extends State<QuestionPage> {
         final detailId = int.tryParse(parts[1]) ?? 0;
         if (qId <= 0 || !validIds.contains(qId) || detailId <= 0) return;
         if (v == null || v.toString().isEmpty) return;
+
+        // Cari label dari detail id
+        final q = questions.firstWhere(
+          (q) => int.tryParse(q['id'].toString()) == qId,
+          orElse: () => {},
+        );
+        if (q.isEmpty) return;
+
+        final details = q['details'] is List ? q['details'] as List : [];
+        final detail = details.firstWhere(
+          (d) => d['id'].toString() == detailId.toString(),
+          orElse: () => {},
+        );
+        if (detail.isEmpty) return;
+
+        final label = detail['label']?.toString() ?? '';
+        if (label.isEmpty) return;
+
+        matrixByQuestion.putIfAbsent(qId, () => {});
+        matrixByQuestion[qId]![label] = v.toString();
+      });
+
+      // Kirim setiap matrix question sebagai 1 payload dengan value JSON
+      matrixByQuestion.forEach((qId, itemMap) {
+        if (itemMap.isEmpty) return;
         payload.add({
           'question_id': qId,
-          'value': v.toString(),
-          'detail_id': detailId,
+          'value': jsonEncode(
+            itemMap,
+          ), // {"Etika": "4", "Komunikasi": "3", ...}
         });
       });
 
@@ -903,12 +940,13 @@ class _QuestionPageState extends State<QuestionPage> {
       }
     } catch (e) {
       debugPrint('ERROR SUBMIT: $e');
-      if (mounted)
+      if (mounted) {
         _showTopSnackBar(
           'Terjadi kesalahan, coba lagi',
           const Color(0xFFC62828),
           icon: Icons.error_outline,
         );
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -933,14 +971,14 @@ class _QuestionPageState extends State<QuestionPage> {
       (p) => p.setDouble("progress_$userId", progress),
     );
 
-    // Warna progress dinamis
     Color progressColor;
-    if (progress < 0.4)
+    if (progress < 0.4) {
       progressColor = Colors.red.shade400;
-    else if (progress < 0.75)
+    } else if (progress < 0.75) {
       progressColor = Colors.orange.shade400;
-    else
+    } else {
       progressColor = Colors.green.shade500;
+    }
 
     return Scaffold(
       backgroundColor: _kBgPage,
@@ -1030,7 +1068,7 @@ class _QuestionPageState extends State<QuestionPage> {
                     itemBuilder: (ctx, i) {
                       final q = visibleQuestions[i];
                       final hint = q['hint']?.toString() ?? '';
-                      final answered = _isAnswered(q);
+                      final isAns = _isAnswered(q);
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
@@ -1039,7 +1077,7 @@ class _QuestionPageState extends State<QuestionPage> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border(
                             left: BorderSide(
-                              color: answered
+                              color: isAns
                                   ? Colors.green.shade400
                                   : Colors.grey.shade300,
                               width: 4,
@@ -1058,7 +1096,6 @@ class _QuestionPageState extends State<QuestionPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Nomor + teks soal
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -1070,7 +1107,7 @@ class _QuestionPageState extends State<QuestionPage> {
                                       top: 1,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: answered
+                                      color: isAns
                                           ? Colors.green.shade400
                                           : _kPrimary.withOpacity(0.08),
                                       shape: BoxShape.circle,
@@ -1081,7 +1118,7 @@ class _QuestionPageState extends State<QuestionPage> {
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
-                                          color: answered
+                                          color: isAns
                                               ? Colors.white
                                               : _kPrimary,
                                         ),
@@ -1098,7 +1135,7 @@ class _QuestionPageState extends State<QuestionPage> {
                                       ),
                                     ),
                                   ),
-                                  if (answered)
+                                  if (isAns)
                                     const Icon(
                                       Icons.check_circle,
                                       color: Colors.green,
@@ -1106,8 +1143,6 @@ class _QuestionPageState extends State<QuestionPage> {
                                     ),
                                 ],
                               ),
-
-                              // Hint
                               if (hint.isNotEmpty) ...[
                                 const SizedBox(height: 8),
                                 Container(
@@ -1146,7 +1181,6 @@ class _QuestionPageState extends State<QuestionPage> {
                                   ),
                                 ),
                               ],
-
                               const SizedBox(height: 12),
                               buildInput(q),
                             ],
