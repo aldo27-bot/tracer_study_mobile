@@ -7,7 +7,7 @@ import '../models/lowongan_model.dart';
 
 class ApiService {
   // static String baseUrl = "http://172.16.103.150:8000/api";
-  static String baseUrl = "http://192.168.1.6:8000/api";
+  static String baseUrl = "http://172.16.115.99:8000/api";
 
   // ==============================
   // HELPER
@@ -277,6 +277,8 @@ class ApiService {
     String prodi,
     int angkatan,
     int tahunLulus,
+    String tempatLahir,
+    String tanggalLahir,
     String alamat,
     File? image,
     bool removeImage,
@@ -291,6 +293,8 @@ class ApiService {
     request.fields['prodi'] = prodi;
     request.fields['angkatan'] = angkatan.toString();
     request.fields['tahun_lulus'] = tahunLulus.toString();
+    request.fields['tempat_lahir'] = tempatLahir;
+    request.fields['tanggal_lahir'] = tanggalLahir;
     request.fields['alamat'] = alamat;
 
     if (image != null) {
@@ -302,6 +306,9 @@ class ApiService {
     final response = await request.send();
 
     final responseString = await response.stream.bytesToString();
+
+    print("STATUS CODE: ${response.statusCode}");
+    print("RESPONSE BODY: $responseString");
 
     return jsonDecode(responseString);
   }

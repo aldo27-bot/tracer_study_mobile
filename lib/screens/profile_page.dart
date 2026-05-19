@@ -78,9 +78,9 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -88,42 +88,41 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-
   // =========================
   // Ambil data terbaru
   // =========================
   Future<void> loadProfile() async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('user_id');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('user_id');
 
-    if (userId == null) return;
+      if (userId == null) return;
 
-    final data = await ApiService.getProfile(userId);
+      final data = await ApiService.getProfile(userId);
 
-    if (data['status'] == true) {
-      final user = data['data'];
+      if (data['status'] == true) {
+        final user = data['data'];
 
-      setState(() {
-        alumniData = AlumniModel(
-          nama: user['nama'],
-          nim: user['nim'],
-          prodi: user['prodi'],
-          angkatan: user['angkatan'].toString(),
-          tahunLulus: user['tahun_lulus'].toString(),
-          alamat: user['alamat'],
-          image: user['image'],
-          email: user['email'],
-          no_hp: user['no_hp'],
-          tempatLahir: user['tempat_lahir'],
-          tanggalLahir: user['tanggal_lahir'],
-        );
-      });
+        setState(() {
+          alumniData = AlumniModel(
+            nama: user['nama'],
+            nim: user['nim'],
+            prodi: user['prodi'],
+            angkatan: user['angkatan'].toString(),
+            tahunLulus: user['tahun_lulus'].toString(),
+            alamat: user['alamat'],
+            image: user['image'],
+            email: user['email'],
+            no_hp: user['no_hp'],
+            tempatLahir: user['tempat_lahir'],
+            tanggalLahir: user['tanggal_lahir'],
+          );
+        });
+      }
+    } catch (e) {
+      print("ERROR LOAD PROFILE: $e");
     }
-  } catch (e) {
-    print("ERROR LOAD PROFILE: $e");
   }
-}
 
   Widget buildDataMenuItem(IconData icon, String title, String value) {
     return Container(
@@ -156,12 +155,18 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(
+                  title,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
                 const SizedBox(height: 4),
-                Text(value,
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.bold)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
@@ -206,7 +211,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         radius: 42,
                         backgroundColor: const Color(0xFF0F2D3F),
                         child: ClipOval(
-                          child: (alumniData.image != null &&
+                          child:
+                              (alumniData.image != null &&
                                   alumniData.image!.isNotEmpty)
                               ? Image.network(
                                   getImageUrl(alumniData.image),
@@ -242,14 +248,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       const SizedBox(height: 6),
 
-                      Text(a.nim,
-                          style: const TextStyle(color: Colors.grey)),
+                      Text(a.nim, style: const TextStyle(color: Colors.grey)),
 
                       const SizedBox(height: 10),
 
-                      Text(a.prodi,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.grey)),
+                      Text(
+                        a.prodi,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
 
                       const SizedBox(height: 20),
 
@@ -267,6 +274,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           );
 
                           if (result != null) {
+                            await loadProfile();
                             final updated = AlumniModel(
                               nama: result["nama"],
                               nim: alumniData.nim,
@@ -276,7 +284,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               alamat: result["alamat"],
 
                               // FIX: handle image null (hapus foto)
-                              image: (result["image"] != null &&
+                              image:
+                                  (result["image"] != null &&
                                       result["image"].toString().isNotEmpty)
                                   ? result["image"]
                                   : null,
@@ -334,8 +343,10 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                             );
                           },
-                          icon: const Icon(Icons.lock_reset,
-                              color: Color(0xFF0F2D3F)),
+                          icon: const Icon(
+                            Icons.lock_reset,
+                            color: Color(0xFF0F2D3F),
+                          ),
                           label: const Text(
                             "Lupa Password",
                             style: TextStyle(
@@ -344,8 +355,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            side:
-                                const BorderSide(color: Color(0xFF0F2D3F)),
+                            side: const BorderSide(color: Color(0xFF0F2D3F)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -369,8 +379,26 @@ class _ProfilePageState extends State<ProfilePage> {
                     buildDataMenuItem(Icons.person, "Nama", a.nama),
                     buildDataMenuItem(Icons.badge, "NIM", a.nim),
                     buildDataMenuItem(Icons.school, "Prodi", a.prodi),
-                    buildDataMenuItem(Icons.calendar_month, "Angkatan", a.angkatan),
-                    buildDataMenuItem(Icons.workspace_premium, "Tahun Lulus", a.tahunLulus),
+                    buildDataMenuItem(
+                      Icons.calendar_month,
+                      "Angkatan",
+                      a.angkatan,
+                    ),
+                    buildDataMenuItem(
+                      Icons.workspace_premium,
+                      "Tahun Lulus",
+                      a.tahunLulus,
+                    ),
+                    buildDataMenuItem(
+                      Icons.place,
+                      "Tempat Lahir",
+                      a.tempatLahir ?? "-",
+                    ),
+                    buildDataMenuItem(
+                      Icons.date_range,
+                      "Tanggal Lahir",
+                      a.tanggalLahir ?? "-",
+                    ),
                     buildDataMenuItem(Icons.location_on, "Alamat", alamatView),
                   ],
                 ),

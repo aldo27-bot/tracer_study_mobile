@@ -21,10 +21,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Future<void> saveLastSeen() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      'last_seen_notif',
-      DateTime.now().toIso8601String(),
-    );
+    await prefs.setString('last_seen_notif', DateTime.now().toIso8601String());
   }
 
   bool isNewNotification(String createdAt) {
@@ -48,20 +45,28 @@ class _NotificationPageState extends State<NotificationPage> {
 
     final data = await ApiService.getNotifications(userId);
 
+    // HAPUS DATA DUPLIKAT BERDASARKAN ID
+    final uniqueData = <dynamic>[];
+    final ids = <int>{};
+
+    for (var item in data) {
+      if (!ids.contains(item['id'])) {
+        ids.add(item['id']);
+        uniqueData.add(item);
+      }
+    }
+
     setState(() {
-      notifications = data;
+      notifications = uniqueData;
     });
 
-    // setelah data tampil, update last seen
     saveLastSeen();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Riwayat Notifikasi"),
-      ),
+      appBar: AppBar(title: const Text("Riwayat Notifikasi")),
       body: notifications.isEmpty
           ? const Center(child: Text("Belum ada notifikasi"))
           : ListView.builder(
@@ -79,24 +84,24 @@ class _NotificationPageState extends State<NotificationPage> {
                       children: [
                         const Icon(Icons.notifications),
 
-                        if (isNewNotification(item['created_at']))
-                          Positioned(
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Text(
-                                "BARU",
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
+                        // if (isNewNotification(item['created_at']))
+                        //   Positioned(
+                        //     right: 0,
+                        //     child: Container(
+                        //       padding: const EdgeInsets.all(4),
+                        //       decoration: const BoxDecoration(
+                        //         color: Colors.red,
+                        //         shape: BoxShape.circle,
+                        //       ),
+                        //       child: const Text(
+                        //         "BARU",
+                        //         style: TextStyle(
+                        //           fontSize: 8,
+                        //           color: Colors.white,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ),
                       ],
                     ),
                     title: Text(item['title'] ?? ''),

@@ -678,161 +678,80 @@ class _QuestionPageState extends State<QuestionPage> {
     }
 
     // ---- MATRIX ----
-    if (type == 'matrix') {
-      final details = q['details'] is List ? q['details'] as List : [];
-      if (details.isEmpty) return const SizedBox();
+if (type == 'matrix') {
+  final details = q['details'] is List ? q['details'] as List : [];
+  if (details.isEmpty) return const SizedBox();
+
+  final matrixOptions = [
+    {'value': '1', 'label': 'Sangat Besar (1)'},
+    {'value': '2', 'label': 'Besar (2)'},
+    {'value': '3', 'label': 'Cukup Besar (3)'},
+    {'value': '4', 'label': 'Kurang Besar (4)'},
+    {'value': '5', 'label': 'Tidak Sama Sekali (5)'},
+  ];
+
+  return Column(
+    children: details.map<Widget>((detail) {
+      final detailId = detail['id'].toString();
+      final label = detail['label']?.toString() ?? '-';
+      final mapKey = '${id}_$detailId';
 
       return Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(10),
-        ),
+        margin: const EdgeInsets.only(bottom: 18),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-              decoration: BoxDecoration(
-                color: _kPrimary.withOpacity(0.06),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(10),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Expanded(flex: 3, child: SizedBox()),
-                  ...List.generate(
-                    5,
-                    (i) => Expanded(
-                      flex: 1,
-                      child: Center(
-                        child: Text(
-                          '${i + 1}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: _kPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Judul Sub Pertanyaan
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              child: Row(
-                children: [
-                  const Expanded(flex: 3, child: SizedBox()),
-                  Expanded(
-                    flex: 5,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Sangat\nRendah',
-                          style: TextStyle(
-                            fontSize: 8,
-                            color: Colors.red.shade300,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          'Sangat\nTinggi',
-                          style: TextStyle(
-                            fontSize: 8,
-                            color: Colors.green.shade500,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
               ),
             ),
-            const Divider(height: 1),
-            ...details.asMap().entries.map<Widget>((entry) {
-              final i = entry.key;
-              final detail = entry.value;
-              final detailId = detail['id'].toString();
-              final label = detail['label']?.toString() ?? '-';
-              final mapKey = '${id}_$detailId';
-              final isEven = i % 2 == 0;
-              return Container(
-                color: isEven ? Colors.white : Colors.grey.shade50,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                    ...List.generate(5, (j) {
-                      final val = (j + 1).toString();
-                      final isSelected = answers[mapKey]?.toString() == val;
-                      final dotColor = [
-                        Colors.red.shade300,
-                        Colors.orange.shade300,
-                        Colors.amber.shade400,
-                        Colors.lightGreen.shade400,
-                        Colors.green.shade500,
-                      ][j];
-                      return Expanded(
-                        flex: 1,
-                        child: GestureDetector(
-                          onTap: () => setState(() => answers[mapKey] = val),
-                          child: Center(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 120),
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isSelected
-                                    ? dotColor
-                                    : Colors.grey.shade200,
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: dotColor.withOpacity(0.4),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ]
-                                    : [],
-                              ),
-                              child: isSelected
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 14,
-                                      color: Colors.white,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
+
+            // Pilihan Radio
+            ...matrixOptions.map((opt) {
+              final value = opt['value']!;
+              final text = opt['label']!;
+              final isSelected =
+                  answers[mapKey]?.toString() == value;
+
+              return RadioListTile<String>(
+                value: value,
+                groupValue: answers[mapKey]?.toString(),
+                onChanged: (val) {
+                  setState(() {
+                    answers[mapKey] = val;
+                  });
+                },
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                activeColor: _kPrimary,
+                title: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isSelected
+                        ? _kPrimary
+                        : Colors.black87,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
                 ),
               );
-            }),
+            }).toList(),
           ],
         ),
       );
-    }
+    }).toList(),
+  );
+}
 
     return const SizedBox();
   }

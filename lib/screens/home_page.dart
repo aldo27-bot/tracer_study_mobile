@@ -36,15 +36,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-//status bar hp jadi warna hitam
-      SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-    ),
-  );
-
     getName();
     loadStatistik();
     loadProgress();
