@@ -228,11 +228,11 @@ class _QuestionPageState extends State<QuestionPage> {
       'f5a1', // provinsi tempat bekerja
       'f5a2', // kota/kabupaten tempat bekerja
       'f1101', // jenis perusahaan
-      'f5b', // nama perusahaan
-      'f5d', // tingkat tempat kerja
-      'f6', // jumlah perusahaan dilamar
-      'f7', // yang merespons
-      'f7a', // yang wawancara
+      'f5b',  // nama perusahaan
+      'f5d',  // tingkat tempat kerja
+      'f6',   // jumlah perusahaan dilamar
+      'f7',   // yang merespons
+      'f7a',  // yang wawancara
     ].contains(kode)) {
       return status.contains('Bekerja');
     }
@@ -245,7 +245,7 @@ class _QuestionPageState extends State<QuestionPage> {
     // ---- Hanya tampil jika status = Wiraswasta ----
     if ([
       'f503', // bulan mulai wiraswasta
-      'f5c', // posisi/jabatan wiraswasta
+      'f5c',  // posisi/jabatan wiraswasta
     ].contains(kode)) {
       return status.contains('Wiraswasta');
     }
@@ -300,20 +300,10 @@ class _QuestionPageState extends State<QuestionPage> {
   void _resetConditionalAnswers() {
     // Reset semua jawaban kondisional saat status (f8) berubah
     for (final kode in [
-      'f502',
-      'f503',
-      'f505',
-      'f5a1',
-      'f5a2',
-      'f1101',
-      'f1102',
-      'f5b',
-      'f5c',
-      'f5d',
-      'f18a',
-      'f18b',
-      'f18c',
-      'f18d',
+      'f502', 'f503', 'f505',
+      'f5a1', 'f5a2', 'f1101', 'f1102',
+      'f5b', 'f5c', 'f5d',
+      'f18a', 'f18b', 'f18c', 'f18d',
     ]) {
       final q = questions.firstWhere(
         (q) => q['kode_soal']?.toString() == kode,
@@ -370,9 +360,7 @@ class _QuestionPageState extends State<QuestionPage> {
         keyboardType: TextInputType.number,
         initialValue: answers[id]?.toString(),
         onChanged: (v) => setState(() => answers[id] = v),
-        decoration: _dec(
-          dataType == 'year' ? 'Contoh: 2023' : 'Masukkan angka',
-        ),
+        decoration: _dec(dataType == 'year' ? 'Contoh: 2023' : 'Masukkan angka'),
         style: const TextStyle(fontSize: 14),
       );
     }
@@ -395,9 +383,7 @@ class _QuestionPageState extends State<QuestionPage> {
             ),
           );
           if (picked != null) {
-            setState(
-              () => answers[id] = picked.toIso8601String().split('T')[0],
-            );
+            setState(() => answers[id] = picked.toIso8601String().split('T')[0]);
           }
         },
         borderRadius: BorderRadius.circular(10),
@@ -485,9 +471,7 @@ class _QuestionPageState extends State<QuestionPage> {
                       style: TextStyle(
                         fontSize: 14,
                         color: isSelected ? _kPrimary : Colors.black87,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -552,9 +536,7 @@ class _QuestionPageState extends State<QuestionPage> {
                       style: TextStyle(
                         fontSize: 14,
                         color: isSelected ? _kPrimary : Colors.black87,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -568,13 +550,7 @@ class _QuestionPageState extends State<QuestionPage> {
 
     // ---- SCALE ----
     if (type == 'scale') {
-      final scaleLabels = [
-        'Sangat\nRendah',
-        'Rendah',
-        'Sedang',
-        'Tinggi',
-        'Sangat\nTinggi',
-      ];
+      final scaleLabels = ['Sangat\nRendah', 'Rendah', 'Sedang', 'Tinggi', 'Sangat\nTinggi'];
       final scaleColors = [
         Colors.red.shade300,
         Colors.orange.shade300,
@@ -603,13 +579,7 @@ class _QuestionPageState extends State<QuestionPage> {
                       width: isSelected ? 0 : 1,
                     ),
                     boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: scaleColors[i].withOpacity(0.4),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
+                        ? [BoxShadow(color: scaleColors[i].withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]
                         : [],
                   ),
                   child: Center(
@@ -630,35 +600,17 @@ class _QuestionPageState extends State<QuestionPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Sangat Rendah',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.red.shade300,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                'Sangat Tinggi',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.green.shade500,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              Text('Sangat Rendah', style: TextStyle(fontSize: 10, color: Colors.red.shade300, fontWeight: FontWeight.w500)),
+              Text('Sangat Tinggi', style: TextStyle(fontSize: 10, color: Colors.green.shade500, fontWeight: FontWeight.w500)),
             ],
           ),
           if (answers[id] != null) ...[
             const SizedBox(height: 6),
             Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: scaleColors[int.parse(answers[id].toString()) - 1]
-                      .withOpacity(0.15),
+                  color: scaleColors[int.parse(answers[id].toString()) - 1].withOpacity(0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -678,80 +630,115 @@ class _QuestionPageState extends State<QuestionPage> {
     }
 
     // ---- MATRIX ----
-if (type == 'matrix') {
-  final details = q['details'] is List ? q['details'] as List : [];
-  if (details.isEmpty) return const SizedBox();
-
-  final matrixOptions = [
-    {'value': '1', 'label': 'Sangat Besar (1)'},
-    {'value': '2', 'label': 'Besar (2)'},
-    {'value': '3', 'label': 'Cukup Besar (3)'},
-    {'value': '4', 'label': 'Kurang Besar (4)'},
-    {'value': '5', 'label': 'Tidak Sama Sekali (5)'},
-  ];
-
-  return Column(
-    children: details.map<Widget>((detail) {
-      final detailId = detail['id'].toString();
-      final label = detail['label']?.toString() ?? '-';
-      final mapKey = '${id}_$detailId';
+    if (type == 'matrix') {
+      final details = q['details'] is List ? q['details'] as List : [];
+      if (details.isEmpty) return const SizedBox();
 
       return Container(
-        margin: const EdgeInsets.only(bottom: 18),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(10),
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Judul Sub Pertanyaan
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+              decoration: BoxDecoration(
+                color: _kPrimary.withOpacity(0.06),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(flex: 3, child: SizedBox()),
+                  ...List.generate(5, (i) => Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: Text(
+                        '${i + 1}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _kPrimary),
+                      ),
+                    ),
+                  )),
+                ],
               ),
             ),
-
-            // Pilihan Radio
-            ...matrixOptions.map((opt) {
-              final value = opt['value']!;
-              final text = opt['label']!;
-              final isSelected =
-                  answers[mapKey]?.toString() == value;
-
-              return RadioListTile<String>(
-                value: value,
-                groupValue: answers[mapKey]?.toString(),
-                onChanged: (val) {
-                  setState(() {
-                    answers[mapKey] = val;
-                  });
-                },
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                activeColor: _kPrimary,
-                title: Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isSelected
-                        ? _kPrimary
-                        : Colors.black87,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: Row(
+                children: [
+                  const Expanded(flex: 3, child: SizedBox()),
+                  Expanded(
+                    flex: 5,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Sangat\nRendah', style: TextStyle(fontSize: 8, color: Colors.red.shade300, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+                        Text('Sangat\nTinggi', style: TextStyle(fontSize: 8, color: Colors.green.shade500, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+                      ],
+                    ),
                   ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            ...details.asMap().entries.map<Widget>((entry) {
+              final i = entry.key;
+              final detail = entry.value;
+              final detailId = detail['id'].toString();
+              final label = detail['label']?.toString() ?? '-';
+              final mapKey = '${id}_$detailId';
+              final isEven = i % 2 == 0;
+              return Container(
+                color: isEven ? Colors.white : Colors.grey.shade50,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                    ),
+                    ...List.generate(5, (j) {
+                      final val = (j + 1).toString();
+                      final isSelected = answers[mapKey]?.toString() == val;
+                      final dotColor = [
+                        Colors.red.shade300,
+                        Colors.orange.shade300,
+                        Colors.amber.shade400,
+                        Colors.lightGreen.shade400,
+                        Colors.green.shade500,
+                      ][j];
+                      return Expanded(
+                        flex: 1,
+                        child: GestureDetector(
+                          onTap: () => setState(() => answers[mapKey] = val),
+                          child: Center(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 120),
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isSelected ? dotColor : Colors.grey.shade200,
+                                boxShadow: isSelected
+                                    ? [BoxShadow(color: dotColor.withOpacity(0.4), blurRadius: 4, offset: const Offset(0, 2))]
+                                    : [],
+                              ),
+                              child: isSelected
+                                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       );
-    }).toList(),
-  );
-}
+    }
 
     return const SizedBox();
   }
@@ -777,8 +764,7 @@ if (type == 'matrix') {
         if (keyStr.contains('_')) return; // skip matrix keys
         final qId = int.tryParse(keyStr) ?? 0;
         if (qId <= 0 || !validIds.contains(qId)) return;
-        if (v == null || (v is String && v.isEmpty) || (v is List && v.isEmpty))
-          return;
+        if (v == null || (v is String && v.isEmpty) || (v is List && v.isEmpty)) return;
         payload.add({
           'question_id': qId,
           'value': v is List ? jsonEncode(v) : v.toString(),
@@ -826,9 +812,7 @@ if (type == 'matrix') {
         if (itemMap.isEmpty) return;
         payload.add({
           'question_id': qId,
-          'value': jsonEncode(
-            itemMap,
-          ), // {"Etika": "4", "Komunikasi": "3", ...}
+          'value': jsonEncode(itemMap), // {"Etika": "4", "Komunikasi": "3", ...}
         });
       });
 
@@ -910,11 +894,7 @@ if (type == 'matrix') {
           children: [
             Text(
               'Tracer Study',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             Text(
               'Survei Alumni',
@@ -938,27 +918,17 @@ if (type == 'matrix') {
                         children: [
                           Text(
                             '${(progress * 100).toInt()}% selesai',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 3,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               '$answered / ${visibleQuestions.length} soal',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
                             ),
                           ),
                         ],
@@ -970,9 +940,7 @@ if (type == 'matrix') {
                           value: progress,
                           minHeight: 10,
                           backgroundColor: Colors.white.withOpacity(0.2),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            progressColor,
-                          ),
+                          valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                         ),
                       ),
                     ],
@@ -996,9 +964,7 @@ if (type == 'matrix') {
                           borderRadius: BorderRadius.circular(12),
                           border: Border(
                             left: BorderSide(
-                              color: isAns
-                                  ? Colors.green.shade400
-                                  : Colors.grey.shade300,
+                              color: isAns ? Colors.green.shade400 : Colors.grey.shade300,
                               width: 4,
                             ),
                           ),
@@ -1021,14 +987,9 @@ if (type == 'matrix') {
                                   Container(
                                     width: 26,
                                     height: 26,
-                                    margin: const EdgeInsets.only(
-                                      right: 10,
-                                      top: 1,
-                                    ),
+                                    margin: const EdgeInsets.only(right: 10, top: 1),
                                     decoration: BoxDecoration(
-                                      color: isAns
-                                          ? Colors.green.shade400
-                                          : _kPrimary.withOpacity(0.08),
+                                      color: isAns ? Colors.green.shade400 : _kPrimary.withOpacity(0.08),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Center(
@@ -1037,9 +998,7 @@ if (type == 'matrix') {
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
-                                          color: isAns
-                                              ? Colors.white
-                                              : _kPrimary,
+                                          color: isAns ? Colors.white : _kPrimary,
                                         ),
                                       ),
                                     ),
@@ -1047,53 +1006,31 @@ if (type == 'matrix') {
                                   Expanded(
                                     child: Text(
                                       q['question_text'] ?? '-',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: Colors.black87,
-                                      ),
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87),
                                     ),
                                   ),
                                   if (isAns)
-                                    const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                      size: 18,
-                                    ),
+                                    const Icon(Icons.check_circle, color: Colors.green, size: 18),
                                 ],
                               ),
                               if (hint.isNotEmpty) ...[
                                 const SizedBox(height: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: Colors.blue.shade50,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: Colors.blue.shade100,
-                                    ),
+                                    border: Border.all(color: Colors.blue.shade100),
                                   ),
                                   child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Icon(
-                                        Icons.info_outline,
-                                        size: 14,
-                                        color: Colors.blue.shade600,
-                                      ),
+                                      Icon(Icons.info_outline, size: 14, color: Colors.blue.shade600),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
                                           hint,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.blue.shade700,
-                                            fontStyle: FontStyle.italic,
-                                          ),
+                                          style: TextStyle(fontSize: 12, color: Colors.blue.shade700, fontStyle: FontStyle.italic),
                                         ),
                                       ),
                                     ],
@@ -1117,11 +1054,7 @@ if (type == 'matrix') {
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, -3)),
           ],
         ),
         child: SafeArea(
@@ -1139,25 +1072,12 @@ if (type == 'matrix') {
                         child: OutlinedButton.icon(
                           onPressed: simpanSementara,
                           icon: const Icon(Icons.save_outlined, size: 18),
-                          label: const Text(
-                            'Simpan',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
+                          label: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.w600)),
                           style: OutlinedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(
-                              230,
-                              3,
-                              110,
-                              242,
-                            ),
+                            backgroundColor: const Color.fromARGB(230, 3, 110, 242),
                             foregroundColor: _kPrimary,
-                            side: const BorderSide(
-                              color: _kPrimary,
-                              width: 1.5,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                            side: const BorderSide(color: _kPrimary, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                         ),
                       ),
@@ -1174,40 +1094,19 @@ if (type == 'matrix') {
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Color.fromARGB(255, 7, 3, 43),
-                                  ),
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Color.fromARGB(255, 7, 3, 43)),
                                 )
                               : const Icon(Icons.send_rounded, size: 18),
                           label: Text(
                             _isSubmitting ? 'Mengirim...' : 'Kirim Jawaban',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                           style: OutlinedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(
-                              255,
-                              2,
-                              255,
-                              40,
-                            ),
-                            foregroundColor: const Color.fromARGB(
-                              255,
-                              7,
-                              3,
-                              43,
-                            ),
-                            side: const BorderSide(
-                              color: Color.fromARGB(255, 7, 3, 43),
-                              width: 1.5,
-                            ),
+                            backgroundColor: const Color.fromARGB(255, 2, 255, 40),
+                            foregroundColor: const Color.fromARGB(255, 7, 3, 43),
+                            side: const BorderSide(color: Color.fromARGB(255, 7, 3, 43), width: 1.5),
                             elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                         ),
                       ),
@@ -1230,17 +1129,10 @@ if (type == 'matrix') {
                         icon: Icons.delete_outline,
                       );
                     },
-                    icon: const Icon(
-                      Icons.refresh,
-                      size: 14,
-                      color: Color.fromARGB(255, 255, 9, 9),
-                    ),
+                    icon: const Icon(Icons.refresh, size: 14, color: Color.fromARGB(255, 255, 9, 9)),
                     label: const Text(
                       'Reset Draft',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 254, 6, 6),
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Color.fromARGB(255, 254, 6, 6), fontSize: 12),
                     ),
                   ),
                 ),
