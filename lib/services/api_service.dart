@@ -9,6 +9,7 @@ class ApiService {
   // static String baseUrl = "http://172.16.103.150:8000/api";
   static String baseUrl = "http://172.16.106.57:8000/api";
 
+
   // ==============================
   // HELPER
   // ==============================
@@ -245,26 +246,55 @@ class ApiService {
   // ==============================
   // Kirim fcm token
   // ==============================
-  static Future<void> sendFcmToken(int userId, String token) async {
+  // static Future<void> sendFcmToken(int userId, String token) async {
+  //   await http.post(
+  //     Uri.parse("$baseUrl/save-fcm-token"),
+  //     headers: {
+  //       "Accept": "application/json",
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: jsonEncode({"user_id": userId, "token": token}),
+  //   );
+  // }
+
+  static Future<void> sendFcmToken(int userId, String fcmToken) async {
+    final prefs = await SharedPreferences.getInstance();
+    final authToken = prefs.getString('auth_token') ?? '';
+
     await http.post(
       Uri.parse("$baseUrl/save-fcm-token"),
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",
+        "Authorization": "Bearer $authToken",
       },
-      body: jsonEncode({"user_id": userId, "token": token}),
+      body: jsonEncode({"user_id": userId, "token": fcmToken}),
     );
   }
 
   // ==============================
   // profile
   // ==============================
+  // static Future<Map<String, dynamic>> getProfile(int userId) async {
+  //   final response = await http.get(
+  //     Uri.parse('$baseUrl/profile?user_id=$userId'),
+  //     headers: {"Accept": "application/json"},
+  //   );
+
+  //   return _handleResponse(response);
+  // }
+
   static Future<Map<String, dynamic>> getProfile(int userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token') ?? '';
+
     final response = await http.get(
       Uri.parse('$baseUrl/profile?user_id=$userId'),
-      headers: {"Accept": "application/json"},
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
     );
-
     return _handleResponse(response);
   }
   // ==============================
@@ -282,11 +312,22 @@ class ApiService {
     String alamat,
     File? image,
     bool removeImage,
-  ) async {
-    var request = http.MultipartRequest(
-      'POST',
-      Uri.parse("$baseUrl/update-profile"),
+  ) 
+  // async {
+  //   var request = http.MultipartRequest(
+  //     'POST',
+  //     Uri.parse("$baseUrl/update-profile"),
+  //   );
+  async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token') ?? '';
+
+  var request = http.MultipartRequest(
+    'POST',
+    Uri.parse("$baseUrl/update-profile"),
     );
+    request.headers['Authorization'] = 'Bearer $token'; // ← tambah ini
+    request.headers['Accept'] = 'application/json';
 
     request.fields['nim'] = nim;
     request.fields['nama'] = nama;
