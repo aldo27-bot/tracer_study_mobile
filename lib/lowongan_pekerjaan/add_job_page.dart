@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../services/api_service.dart';
 
 class AddJobPage extends StatefulWidget {
@@ -22,6 +26,29 @@ class _AddJobPageState extends State<AddJobPage> {
 
   bool isLoading = false;
 
+  // =====================================
+  // FOTO LOWONGAN
+  // =====================================
+  File? selectedImage;
+
+  // =====================================
+  // PILIH FOTO
+  // =====================================
+  Future<void> pickImage() async {
+    final picker = ImagePicker();
+
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
   // =========================
   // SIMPAN LOWONGAN
   // =========================
@@ -44,6 +71,9 @@ class _AddJobPageState extends State<AddJobPage> {
       kontak: kontakC.text.trim(),
       linkLamaran: linkC.text.trim(),
       dibuatOleh: 1,
+
+      // FOTO
+      foto: selectedImage,
     );
 
     setState(() {
@@ -114,7 +144,10 @@ class _AddJobPageState extends State<AddJobPage> {
 
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFEC7004), width: 2),
+            borderSide: const BorderSide(
+              color: Color(0xFFEC7004),
+              width: 2,
+            ),
           ),
 
           errorBorder: OutlineInputBorder(
@@ -142,7 +175,9 @@ class _AddJobPageState extends State<AddJobPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFFEC7004)),
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFEC7004),
+            ),
           ),
 
           child: child!,
@@ -208,6 +243,7 @@ class _AddJobPageState extends State<AddJobPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+
               const Text(
                 "Isi informasi lowongan pekerjaan",
                 style: TextStyle(
@@ -218,6 +254,57 @@ class _AddJobPageState extends State<AddJobPage> {
               ),
 
               const SizedBox(height: 24),
+
+              // =====================================
+              // FOTO LOWONGAN
+              // =====================================
+              GestureDetector(
+                onTap: pickImage,
+
+                child: Container(
+                  width: double.infinity,
+                  height: 200,
+
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+
+                  child: selectedImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+
+                          child: Image.file(
+                            selectedImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+
+                            Icon(
+                              Icons.image_outlined,
+                              size: 60,
+                              color: Colors.grey,
+                            ),
+
+                            SizedBox(height: 10),
+
+                            Text(
+                              "Pilih Foto Lowongan",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
 
               // POSISI
               buildField(
@@ -383,12 +470,11 @@ class _AddJobPageState extends State<AddJobPage> {
                 hint: "https://linkedin.com/...",
 
                 validator: (value) {
-                  // kosong diperbolehkan
+
                   if (value == null || value.isEmpty) {
                     return null;
                   }
 
-                  // kalau diisi harus valid
                   if (!value.startsWith("http")) {
                     return "Link harus diawali http/https";
                   }
@@ -399,7 +485,7 @@ class _AddJobPageState extends State<AddJobPage> {
 
               const SizedBox(height: 10),
 
-              /// BUTTON
+              // BUTTON
               SafeArea(
                 top: false,
 
@@ -413,6 +499,7 @@ class _AddJobPageState extends State<AddJobPage> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0F2D3F),
+
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),

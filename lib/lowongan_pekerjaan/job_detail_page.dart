@@ -17,8 +17,7 @@ class JobDetailPage extends StatelessWidget {
   Future<void> openLink(BuildContext context) async {
 
     // jika link kosong
-    if (job.linkLamaran == null ||
-        job.linkLamaran!.isEmpty) {
+    if (job.linkLamaran.isEmpty) {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -31,7 +30,7 @@ class JobDetailPage extends StatelessWidget {
       return;
     }
 
-    final Uri url = Uri.parse(job.linkLamaran!);
+    final Uri url = Uri.parse(job.linkLamaran);
 
     if (await canLaunchUrl(url)) {
 
@@ -88,24 +87,61 @@ class JobDetailPage extends StatelessWidget {
                 children: [
 
                   // =========================
-                  // ICON
+                  // FOTO LOWONGAN
                   // =========================
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
+                  if (job.fotoUrl.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      height: 220,
 
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3E0),
                         borderRadius: BorderRadius.circular(20),
                       ),
 
-                      child: const Icon(
-                        Icons.work,
-                        size: 60,
-                        color: Color(0xFFEC7004),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+
+                        child: Image.network(
+                          job.fotoUrl,
+                          fit: BoxFit.cover,
+
+                          errorBuilder: (
+                            context,
+                            error,
+                            stackTrace,
+                          ) {
+                            return Container(
+                              color: Colors.grey.shade200,
+
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 60,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    )
+                  else
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+
+                        child: const Icon(
+                          Icons.work,
+                          size: 60,
+                          color: Color(0xFFEC7004),
+                        ),
                       ),
                     ),
-                  ),
 
                   const SizedBox(height: 24),
 

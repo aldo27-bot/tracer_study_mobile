@@ -7,7 +7,7 @@ import '../models/lowongan_model.dart';
 
 class ApiService {
   // static String baseUrl = "http://172.16.103.150:8000/api";
-  static String baseUrl = "http://172.16.106.23:8000/api";
+  static String baseUrl = "http://172.16.106.57:8000/api";
 
   // ==============================
   // HELPER
@@ -343,25 +343,44 @@ class ApiService {
     required String kontak,
     required String linkLamaran,
     required int dibuatOleh,
+
+    // TAMBAHAN
+    File? foto,
   }) async {
     try {
-      final response = await http.post(
+      var request = http.MultipartRequest(
+        'POST',
         Uri.parse("$baseUrl/lowongan"),
-
-        headers: {"Accept": "application/json"},
-
-        body: {
-          "posisi": posisi,
-          "nama_perusahaan": namaPerusahaan,
-          "lokasi": lokasi,
-          "gaji": gaji,
-          "deskripsi": deskripsi,
-          "batas_lamaran": batasLamaran,
-          "kontak": kontak,
-          "link_lamaran": linkLamaran,
-          "dibuat_oleh": dibuatOleh.toString(),
-        },
       );
+
+      request.headers.addAll({"Accept": "application/json"});
+
+      // =====================================
+      // FIELD TEXT
+      // =====================================
+      request.fields['posisi'] = posisi;
+      request.fields['nama_perusahaan'] = namaPerusahaan;
+      request.fields['lokasi'] = lokasi;
+      request.fields['gaji'] = gaji;
+      request.fields['deskripsi'] = deskripsi;
+      request.fields['batas_lamaran'] = batasLamaran;
+      request.fields['kontak'] = kontak;
+      request.fields['link_lamaran'] = linkLamaran;
+      request.fields['dibuat_oleh'] = dibuatOleh.toString();
+
+      // =====================================
+      // UPLOAD FOTO
+      // =====================================
+      if (foto != null) {
+        request.files.add(await http.MultipartFile.fromPath('foto', foto.path));
+      }
+
+      // =====================================
+      // SEND REQUEST
+      // =====================================
+      var streamedResponse = await request.send();
+
+      var response = await http.Response.fromStream(streamedResponse);
 
       print(response.body);
 

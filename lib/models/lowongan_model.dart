@@ -9,6 +9,9 @@ class LowonganModel {
   final String kontak;
   final String linkLamaran;
 
+  // TAMBAHAN
+  final String fotoUrl;
+
   LowonganModel({
     required this.id,
     required this.posisi,
@@ -19,6 +22,9 @@ class LowonganModel {
     required this.batasLamaran,
     required this.kontak,
     required this.linkLamaran,
+
+    // TAMBAHAN
+    required this.fotoUrl,
   });
 
   factory LowonganModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +38,9 @@ class LowonganModel {
       batasLamaran: json['batas_lamaran'] ?? '',
       kontak: json['kontak'] ?? '',
       linkLamaran: json['link_lamaran'] ?? '',
+
+      // TAMBAHAN
+      fotoUrl: json['foto_url'] ?? '',
     );
   }
 }

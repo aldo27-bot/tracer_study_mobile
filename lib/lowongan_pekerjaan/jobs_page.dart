@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/lowongan_model.dart';
@@ -71,6 +72,7 @@ class _JobsPageState extends State<JobsPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         centerTitle: true,
+
         title: const Text(
           "Lowongan Kerja",
           style: TextStyle(
@@ -124,6 +126,7 @@ class _JobsPageState extends State<JobsPage> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
+
                         boxShadow: const [
                           BoxShadow(
                             color: Colors.black12,
@@ -138,21 +141,58 @@ class _JobsPageState extends State<JobsPage> {
                         children: [
 
                           // =========================
-                          // ICON
+                          // FOTO / LOGO LOWONGAN
                           // =========================
-                          Container(
-                            padding: const EdgeInsets.all(14),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
 
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF3E0),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                            child: job.fotoUrl.isNotEmpty
 
-                            child: const Icon(
-                              Icons.work,
-                              color: Color(0xFFEC7004),
-                              size: 32,
-                            ),
+                                // JIKA ADA FOTO
+                                ? Image.network(
+                                    job.fotoUrl,
+
+                                    width: 95,
+                                    height: 95,
+
+                                    fit: BoxFit.cover,
+
+                                    errorBuilder: (
+                                      context,
+                                      error,
+                                      stackTrace,
+                                    ) {
+                                      return Container(
+                                        width: 95,
+                                        height: 95,
+
+                                        color: Colors.grey.shade200,
+
+                                        child: const Icon(
+                                          Icons.broken_image,
+                                          color: Colors.grey,
+                                          size: 35,
+                                        ),
+                                      );
+                                    },
+                                  )
+
+                                // JIKA TIDAK ADA FOTO
+                                : Container(
+                                    width: 95,
+                                    height: 95,
+
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFF3E0),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+
+                                    child: const Icon(
+                                      Icons.work,
+                                      color: Color(0xFFEC7004),
+                                      size: 40,
+                                    ),
+                                  ),
                           ),
 
                           const SizedBox(width: 16),
@@ -229,6 +269,7 @@ class _JobsPageState extends State<JobsPage> {
                                   job.deskripsi,
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
+
                                   style: const TextStyle(
                                     color: Colors.black87,
                                     fontSize: 13,
